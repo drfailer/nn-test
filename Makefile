@@ -15,6 +15,7 @@ build/%.o: src/%.c
 doc: doc/nn.tex
 	mkdir -p doc/out
 	cd doc; pdflatex -output-directory out nn.tex
+	mv doc/out/*.pdf doc
 
 clean:
 	rm -rf build
