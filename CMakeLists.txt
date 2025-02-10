@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.16)
+
+project(test-nn)
+
+set(CMAKE_CXX_STANDARD 20)
+
+set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+add_compile_options(-Wall -Wextra -g)
+
+add_executable(test-nn src/main.cpp src/model.cpp)
+target_link_libraries(test-nn cudnn)
