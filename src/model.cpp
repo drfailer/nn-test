@@ -4,11 +4,12 @@
 
 void Model::init() {
     std::random_device rd;
-    std::mt19937_64 gen(rd());
+    /* std::mt19937_64 gen(rd()); */
+    std::mt19937_64 gen(0);
     std::normal_distribution dist(.0, 1.0);
 
     for (auto &layer : this->layers) {
-        size_t layer_weight_size = layer.nb_nodes * layer.nb_nodes_prev;
+        size_t layer_weight_size = layer.nb_nodes * layer.nb_inputs;
         size_t layer_biases_size = layer.nb_nodes;
 
         for (size_t i = 0; i < layer_weight_size; ++i) {
@@ -35,8 +36,10 @@ void Model::add_layer(size_t nb_inputs, size_t nb_nodes) {
         exit(1);
     }
 
+    layer.nb_inputs = nb_inputs;
+    layer.nb_nodes = nb_nodes;
     layer.weights = new double[nb_nodes * nb_inputs];
-    layer.weights = new double[nb_nodes];
+    layer.biases = new double[nb_nodes];
     this->layers.push_back(layer);
 }
 
