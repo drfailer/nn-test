@@ -9,7 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_options(-Wall -Wextra -g)
 
-add_executable(test-nn src/main.cpp src/model.cpp)
+add_executable(test-nn src/main.cpp src/model.cpp src/trainer.cpp)
 target_link_directories(test-nn PUBLIC ~/Programming/usr/lib/)
 target_include_directories(test-nn PUBLIC ~/Programming/usr/include/)
 target_link_libraries(test-nn cudnn openblas)
