@@ -44,7 +44,7 @@
 \newcommand{\errklp}{\delta_{k}^{l+1}}
 \newcommand{\errjL}{\delta_{j}^{L}}
 \newcommand{\errL}{\delta^{L}}
-  
+
 \maketitle
 
 \section{Notations}
@@ -156,7 +156,7 @@ Then we compute the gradiant of all the nodes using the back propagation
       \State $grads\_b[L - 1]$ = $deltas$
       \State $grads\_w[L - 1]$ = matmul($deltas$, act'($a[L - 2]$)) \\
 
-      \For{$l$ in $(L - 2)$..=0}
+      \For{$l$ in $(L - 2)$..=1}
         \State $deltas$ = matmul($weights[l + 1]$, $deltas$) $\odot$ act'($zs[l]$)
         \State $grads\_b[l]$ = $deltas$
         \State $grads\_w[l]$ = matmul($deltas$, act'($a[l - 1]$))
@@ -275,7 +275,7 @@ We prove the following:
 We can rewrite it like the following:
 
 \begin{align}
-  \frac{\partial cost}{\partial \bjl} = 
+  \frac{\partial cost}{\partial \bjl} =
     \sum_{k}{
       \frac{\partial cost}{\partial \zklp}
       \frac{\partial \zklp}{\partial \zjl}
@@ -286,7 +286,7 @@ We can rewrite it like the following:
 since $\frac{\partial \zjl}{\partial \bjl} = 1$, then:
 
 \begin{align}
-  \frac{\partial cost}{\partial \bjl} &= 
+  \frac{\partial cost}{\partial \bjl} &=
     \sum_{k}{
       \frac{\partial cost}{\partial \zklp}
       \frac{\partial \zklp}{\partial \zjl}
@@ -305,7 +305,7 @@ We prove the following:
 We can rewrite it like the following:
 
 \begin{align}
-  \frac{\partial cost}{\partial \wjkl} = 
+  \frac{\partial cost}{\partial \wjkl} =
     \sum_{k}{
       \frac{\partial cost}{\partial \zklp}
       \frac{\partial \zklp}{\partial \zjl}
@@ -316,7 +316,7 @@ We can rewrite it like the following:
 since $\frac{\partial \zjl}{\partial \wjkl} = \akll$, then:
 
 \begin{align}
-  \frac{\partial cost}{\partial \wjkl} &= 
+  \frac{\partial cost}{\partial \wjkl} &=
     \sum_{k}{
       \frac{\partial cost}{\partial \zklp}
       \frac{\partial \zklp}{\partial \zjl}
