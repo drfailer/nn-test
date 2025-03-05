@@ -152,14 +152,14 @@ Then we compute the gradiant of all the nodes using the back propagation
   \caption{Back propagation algorithm}
   \begin{algorithmic}
     \Procedure{BackPropagate}{$as$, $zs$, $weights$, $biases$}
-      \State $deltas$ = cost'($as[L - 1]$, $expected\_solution$) $\odot$ act'($zs[L - 1]$)
+      \State $deltas$ = cost'($as[len(as) - 1]$, $expected\_solution$) $\odot$ act'($zs[len(zs) - 1]$)
       \State $grads\_b[L - 1]$ = $deltas$
-      \State $grads\_w[L - 1]$ = matmul($deltas$, act'($a[L - 2]$)) \\
+      \State $grads\_w[L - 1]$ = matmul($deltas$, $as[len(as) - 2]$) \\
 
-      \For{$l$ in $(L - 2)$..=1}
-        \State $deltas$ = matmul($weights[l + 1]$, $deltas$) $\odot$ act'($zs[l]$)
-        \State $grads\_b[l]$ = $deltas$
-        \State $grads\_w[l]$ = matmul($deltas$, act'($a[l - 1]$))
+      \For{$l$ in $2..<L$}
+        \State $deltas$ = matmul(T($weights[L - l + 1]$), $deltas$) $\odot$ act'($zs[len(zs) - l]$)
+        \State $grads\_b[L - l]$ = $deltas$
+        \State $grads\_w[L - l]$ = matmul($deltas$, $as[len(as) - l - 1]$)
       \EndFor
 
       \State \textbf{return} $grads\_w$, $grads\_b$
@@ -175,7 +175,7 @@ stochastic gradiant descant:
   \caption{Optimization for a stochastic gradiant descant}
   \begin{algorithmic}
     \Procedure{Optimize}{$weights$, $biases$, $grads\_w$, $grads\_b$, $l\_rate$}
-      \For{$l$ in 0..<L}
+      \For{$l$ in $0..<L$}
         \State $weights[l]$ -= $l\_rate \times grads\_w[l]$
         \State $biases[l]$ -= $l\_rate \times grads\_b[l]$
       \EndFor

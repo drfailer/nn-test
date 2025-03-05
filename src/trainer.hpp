@@ -14,12 +14,14 @@ class Trainer {
   public:
     using Vector = std::vector<double>;
     using Vectors = std::vector<std::vector<double>>;
+    using DataBase = std::vector<std::pair<Vector, Vector>>;
 
   public:
     Vector compute_z(Layer const &layer, Vector const &a);
 
     Vector apply(std::function<double(double)> fun, Vector const &vector);
-    Vector apply(std::function<double(double, double)> fun, Vector const &vector1, Vector const &vector2);
+    Vector apply(std::function<double(double, double)> fun,
+                 Vector const &vector1, Vector const &vector2);
 
     Vector act(Vector const &z);
     Vector act_prime(Vector const &z);
@@ -31,7 +33,15 @@ class Trainer {
     Vector matmul(Layer const &layer, Vector &err);
 
     std::pair<Vectors, Vectors> feedforward(Vector const &input);
-    std::pair<Vectors, Vectors> backpropagate(Vector const &ground_truth, Vectors as, Vectors zs);
+    std::pair<Vectors, Vectors> backpropagate(Vector const &ground_truth,
+                                              Vectors const &as,
+                                              Vectors const &zs);
+
+    void update_minibatch(DataBase const &minibatch, double learning_rate);
+    void optimize(Vectors const &grads_w, Vectors const &grads_b,
+                  double learning_rate);
+    void train(DataBase const &db, size_t minibatch_size, size_t nb_epochs,
+               double learning_rate);
 
   private:
     Model *model_;
