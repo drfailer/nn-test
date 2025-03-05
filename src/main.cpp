@@ -3,20 +3,20 @@
 #include <cmath>
 #include <iostream>
 
-Trainer::DataBase OR_train = {
+DataBase OR_train = {
     {{0, 0}, {0}},
     {{0, 1}, {1}},
     {{1, 0}, {1}},
     {{1, 1}, {1}},
 };
-Trainer::DataBase AND_train = {
+DataBase AND_train = {
     {{0, 0}, {0}},
     {{0, 1}, {0}},
     {{1, 0}, {0}},
     {{1, 1}, {1}},
 };
-Trainer::DataBase train = OR_train;
-/* Trainer::DataBase train = AND_train; */
+DataBase train = OR_train;
+/* DataBase train = AND_train; */
 
 
 double sigmoid(double x) {
@@ -49,11 +49,12 @@ double quadratic_loss_prime(double gt, double y) {
 
 int main(void) {
     Model m;
-    Trainer t(&m, sigmoid, sigmoid_prime, quadratic_loss, quadratic_loss_prime);
-    /* Trainer t(&m, binary_step, binary_step, quadratic_loss, quadratic_loss_prime); */
 
     m.add_layer(2, 1);
     m.init();
+
+    Trainer t(&m, &sigmoid, &sigmoid_prime, &quadratic_loss, &quadratic_loss_prime);
+    /* Trainer t(&m, binary_step, binary_step, quadratic_loss, quadratic_loss_prime); */
 
 
     std::cout << "start value:" << std::endl;
@@ -62,7 +63,7 @@ int main(void) {
         std::cout << "found: " << as.back()[0] << "; expected: " << elt.second[0] << std::endl;
     }
 
-    t.train(train, 4, 20'000, 0.004);
+    t.train(train, 4, 100'000, 0.004);
 
     std::cout << "after train:" << std::endl;
     for (auto const &elt : train) {

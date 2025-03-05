@@ -2,21 +2,43 @@
 #include "cblas.h"
 #include <iostream>
 
-using Vector = Trainer::Vector;
-using Vectors = Trainer::Vectors;
+/******************************************************************************/
+/*                              helper function                               */
+/******************************************************************************/
 
-Vector Trainer::compute_z(Layer const &layer, Vector const &a) {
-    Vector z(layer.biases, layer.biases + layer.nb_nodes);
+Vector hadamard(Vector const &a, Vector const &b) {
+    Vector result(a.size());
 
-    // z = weights*a + biases
-    assert(a.size() == layer.nb_inputs);
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, layer.nb_nodes, layer.nb_inputs,
-                1.0, layer.weights, layer.nb_inputs, a.data(), 1, 1.0, z.data(),
-                1);
-    return z;
+    assert(a.size() == b.size());
+    for (size_t i = 0; i < a.size(); ++i) {
+        result[i] = a[i] * b[i];
+    }
+    return result;
 }
 
-Vector Trainer::apply(std::function<double(double)> fun, Vector const &vector) {
+// multiply the vectors to create a square matrix
+Vector matmul(Vector err, Vector a) {
+    Vector result(err.size() * a.size());
+
+    for (size_t j = 0; j < err.size(); ++j) {
+        for (size_t k = 0; k < a.size(); ++k) {
+            result[j * a.size() + k] = err[j] * a[k];
+        }
+    }
+    return result;
+}
+
+Vector matmul(Layer const &layer, Vector &err) {
+    Vector result(layer.nb_nodes, 0);
+
+    // BUG: there is an issue with cblas (causing memory leak and bad access)
+    cblas_dgemv(CblasRowMajor, CblasTrans, layer.nb_nodes, layer.nb_inputs, 1.0,
+                layer.weights, layer.nb_inputs, err.data(), 1, 0, result.data(),
+                1);
+    return result;
+}
+
+Vector apply(std::function<double(double)> fun, Vector const &vector) {
     Vector result(vector.size());
 
     for (size_t i = 0; i < vector.size(); ++i) {
@@ -25,7 +47,7 @@ Vector Trainer::apply(std::function<double(double)> fun, Vector const &vector) {
     return result;
 }
 
-Vector Trainer::apply(std::function<double(double, double)> fun,
+Vector apply(std::function<double(double, double)> fun,
                       Vector const &vector1, Vector const &vector2) {
     Vector result(vector1.size());
 
@@ -35,6 +57,26 @@ Vector Trainer::apply(std::function<double(double, double)> fun,
     }
     return result;
 }
+
+struct LazyCVMult {
+    double constant;
+    Vector const &vector;
+};
+
+LazyCVMult operator*(double constant, Vector const &vector) {
+    return LazyCVMult(constant, vector);
+}
+
+double const *operator-=(double *v, LazyCVMult const &cvmult) {
+    for (size_t i = 0; i < cvmult.vector.size(); ++i) {
+        v[i] -= cvmult.constant * cvmult.vector[i];
+    }
+    return v;
+}
+
+/******************************************************************************/
+/*                           trainer implementation                           */
+/******************************************************************************/
 
 Vector Trainer::act(Vector const &z) { return apply(act_, z); }
 
@@ -48,35 +90,21 @@ Vector Trainer::cost_prime(Vector const &ground_truth, Vector const &y) {
     return apply(cost_prime_, ground_truth, y);
 }
 
-Vector Trainer::hadamard(Vector const &a, Vector const &b) {
-    Vector result(a.size());
+Vector Trainer::compute_z(Layer const &layer, Vector const &a) {
+    assert(a.size() == layer.nb_inputs);
+    Vector z(layer.biases, layer.biases + layer.nb_nodes);
 
-    assert(a.size() == b.size());
-    for (size_t i = 0; i < a.size(); ++i) {
-        result[i] = a[i] * b[i];
-    }
-    return result;
-}
-
-// multiply the vectors to create a square matrix
-Vector Trainer::matmul(Vector err, Vector a) {
-    Vector result(err.size() * a.size());
-
-    for (size_t j = 0; j < err.size(); ++j) {
-        for (size_t k = 0; k < a.size(); ++k) {
-            result[j * a.size() + k] = err[j] * a[k];
+    // z = weights*a + biases
+    // BUG: there is an issue with cblas (causing memory leak and bad access)
+    /* cblas_dgemv(CblasRowMajor, CblasNoTrans, layer.nb_inputs, layer.nb_nodes, */
+    /*             1.0, layer.weights, layer.nb_inputs, a.data(), 1, 1.0, z.data(), */
+    /*             1); */
+    for (size_t i = 0; i < layer.nb_nodes; ++i) {
+        for (size_t j = 0; j < layer.nb_inputs; ++j) {
+            z[i] += layer.weights[i * layer.nb_inputs + j] * a[j];
         }
     }
-    return result;
-}
-
-Vector Trainer::matmul(Layer const &layer, Vector &err) {
-    Vector result(layer.nb_nodes, 0);
-
-    cblas_dgemv(CblasRowMajor, CblasTrans, layer.nb_nodes, layer.nb_inputs, 1.0,
-                layer.weights, layer.nb_inputs, err.data(), 1, 0, result.data(),
-                1);
-    return result;
+    return z;
 }
 
 std::pair<Vectors, Vectors> Trainer::feedforward(Vector const &input) {
@@ -85,7 +113,7 @@ std::pair<Vectors, Vectors> Trainer::feedforward(Vector const &input) {
     Vector a = input;
     Vectors as = {a};
 
-    for (auto &layer : model_->layers) {
+    for (auto const &layer : model_->layers) {
         z = compute_z(layer, a);
         zs.push_back(z);
         a = act(z);
@@ -106,7 +134,7 @@ std::pair<Vectors, Vectors> Trainer::backpropagate(Vector const &ground_truth,
     grads_b[L - 1] = err;
     grads_w[L - 1] = matmul(err, as[as.size() - 2]);
 
-    for (size_t l = 2; l < L; ++l) {
+    for (size_t l = 2; l <= L; ++l) {
         err = hadamard(matmul(model_->layers[L - l + 1], err),
                        act_prime(zs[zs.size() - l]));
         grads_b[L - l] = err;
@@ -116,17 +144,14 @@ std::pair<Vectors, Vectors> Trainer::backpropagate(Vector const &ground_truth,
 }
 
 void Trainer::optimize(Vectors const &grads_w, Vectors const &grads_b,
-                       double learning_rate) {
+                       double const learning_rate) {
     for (size_t l = 0; l < model_->layers.size(); ++l) {
         assert(grads_w[l].size() ==
                model_->layers[l].nb_nodes * model_->layers[l].nb_inputs);
-        for (size_t i = 0; i < grads_w.size(); ++i) {
-            model_->layers[l].weights[i] -= learning_rate * grads_w[l][i];
-        }
         assert(grads_b[l].size() == model_->layers[l].nb_nodes);
-        for (size_t i = 0; i < grads_b.size(); ++i) {
-            model_->layers[l].biases[i] -= learning_rate * grads_b[l][i];
-        }
+
+        model_->layers[l].weights -= learning_rate * grads_w[l];
+        model_->layers[l].biases -= learning_rate * grads_b[l];
     }
 }
 
