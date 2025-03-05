@@ -156,7 +156,7 @@ Then we compute the gradiant of all the nodes using the back propagation
       \State $grads\_b[L - 1]$ = $deltas$
       \State $grads\_w[L - 1]$ = matmul($deltas$, $as[len(as) - 2]$) \\
 
-      \For{$l$ in $2..<L$}
+      \For{$l$ in $2..\leq L$}
         \State $deltas$ = matmul(T($weights[L - l + 1]$), $deltas$) $\odot$ act'($zs[len(zs) - l]$)
         \State $grads\_b[L - l]$ = $deltas$
         \State $grads\_w[L - l]$ = matmul($deltas$, $as[len(as) - l - 1]$)
