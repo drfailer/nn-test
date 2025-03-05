@@ -2,10 +2,8 @@
 #include <random>
 #include <iostream>
 
-void Model::init() {
-    std::random_device rd;
-    /* std::mt19937_64 gen(rd()); */
-    std::mt19937_64 gen(0);
+void Model::init(uint64_t seed) {
+    std::mt19937_64 gen(seed);
     std::normal_distribution dist(.0, 1.0);
 
     for (auto &layer : this->layers) {

@@ -145,6 +145,7 @@ std::pair<Vectors, Vectors> Trainer::backpropagate(Vector const &ground_truth,
     return {grads_w, grads_b};
 }
 
+// SGD -> we should have more in the future
 void Trainer::optimize(Vectors const &grads_w, Vectors const &grads_b,
                        double const learning_rate) {
     for (size_t l = 0; l < model_->layers.size(); ++l) {
