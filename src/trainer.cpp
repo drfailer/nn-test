@@ -1,5 +1,6 @@
 #include "trainer.hpp"
 #include "cblas.h"
+#include <cstring>
 #include <iostream>
 
 /******************************************************************************/
@@ -29,7 +30,7 @@ Vector matmul(Vector err, Vector a) {
 }
 
 Vector matmul(Layer const &layer, Vector &err) {
-    Vector result(layer.nb_nodes, 0);
+    Vector result(layer.nb_inputs, 0);
 
     // BUG: there is an issue with cblas (causing memory leak and bad access)
     cblas_dgemv(CblasRowMajor, CblasTrans, layer.nb_nodes, layer.nb_inputs, 1.0,
@@ -96,7 +97,7 @@ Vector Trainer::compute_z(Layer const &layer, Vector const &a) {
 
     // z = weights*a + biases
     // BUG: there is an issue with cblas (causing memory leak and bad access)
-    /* cblas_dgemv(CblasRowMajor, CblasNoTrans, layer.nb_inputs, layer.nb_nodes, */
+    /* cblas_dgemv(CblasRowMajor, CblasNoTrans, layer.nb_nodes, layer.nb_inputs, */
     /*             1.0, layer.weights, layer.nb_inputs, a.data(), 1, 1.0, z.data(), */
     /*             1); */
     for (size_t i = 0; i < layer.nb_nodes; ++i) {

@@ -15,8 +15,15 @@ DataBase AND_train = {
     {{1, 0}, {0}},
     {{1, 1}, {1}},
 };
-DataBase train = OR_train;
+DataBase XOR_train = {
+    {{0, 0}, {0}},
+    {{0, 1}, {1}},
+    {{1, 0}, {1}},
+    {{1, 1}, {0}},
+};
+/* DataBase train = OR_train; */
 /* DataBase train = AND_train; */
+DataBase train = XOR_train;
 
 
 double sigmoid(double x) {
@@ -50,6 +57,7 @@ double quadratic_loss_prime(double gt, double y) {
 int main(void) {
     Model m;
 
+    m.add_layer(2, 2);
     m.add_layer(2, 1);
     m.init();
 
@@ -64,6 +72,7 @@ int main(void) {
     }
 
     t.train(train, 4, 100'000, 0.004);
+    /* t.train(train, 4, 10, 0.004); */
 
     std::cout << "after train:" << std::endl;
     for (auto const &elt : train) {
