@@ -30,6 +30,7 @@ class Trainer {
                   double learning_rate);
     void train(DataBase const &db, size_t minibatch_size, size_t nb_epochs,
                double learning_rate);
+    double evaluate(DataBase const &test_db);
 
   private:
     Model *model_ = nullptr;

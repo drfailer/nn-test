@@ -22,8 +22,8 @@ DataBase XOR_train = {
     {{1, 1}, {0}},
 };
 /* DataBase train = OR_train; */
-/* DataBase train = AND_train; */
-DataBase train = XOR_train;
+DataBase train = AND_train;
+/* DataBase train = XOR_train; */
 
 
 double sigmoid(double x) {
@@ -79,6 +79,8 @@ int main(void) {
         auto [as, zs] = t.feedforward(elt.first);
         std::cout << "found: " << as.back()[0] << "; expected: " << elt.second[0] << std::endl;
     }
+
+    std::cout << "evaluation: " << t.evaluate(train) << std::endl;
 
     m.clear();
     return 0;

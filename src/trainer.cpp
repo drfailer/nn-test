@@ -2,6 +2,7 @@
 #include "cblas.h"
 #include <cstring>
 #include <iostream>
+#include <numeric>
 
 /******************************************************************************/
 /*                              helper function                               */
@@ -172,4 +173,16 @@ void Trainer::train(DataBase const &db, size_t minibatch_size, size_t nb_epochs,
         // TODO: take a random sample of the db to build the minibatch
         update_minibatch(db, learning_rate);
     }
+}
+
+double Trainer::evaluate(DataBase const &test_db) {
+    double result = 0;
+
+    for (auto const &elt : test_db) {
+        auto [as, zs] = feedforward(elt.first);
+        auto costs = cost(elt.second, as.back());
+        result +=
+            std::accumulate(costs.begin(), costs.end(), 0.0) / costs.size();
+    }
+    return result / test_db.size();
 }
