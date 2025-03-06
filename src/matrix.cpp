@@ -60,13 +60,27 @@ Vector matmul(Matrix const &weights, Vector &err) {
 /******************************************************************************/
 
 
-LazyCVMult operator*(double constant, Vector const &vector) {
-    return LazyCVMult(constant, vector);
+LazyCVMult operator*(double constant, Vector const &v) {
+    return LazyCVMult(constant, v);
 }
 
 Vector const &operator-=(Vector &v, LazyCVMult const &cvmult) {
     for (size_t i = 0; i < v.size; ++i) {
         v.mem[i] -= cvmult.c * cvmult.v.mem[i];
+    }
+    return v;
+}
+
+Vector const &operator+=(Vector &lhs, Vector const &rhs) {
+    for (size_t i = 0; i < lhs.size; ++i) {
+        lhs.mem[i] += rhs.mem[i];
+    }
+    return lhs;
+}
+
+Vector const &operator/=(Vector &v, double constant) {
+    for (size_t i = 0; i < v.size; ++i) {
+        v.mem[i] /= constant;
     }
     return v;
 }
@@ -78,6 +92,20 @@ LazyCMMult operator*(double constant, Matrix const &m) {
 Matrix const &operator-=(Matrix &m, LazyCMMult const &cvmult) {
     for (size_t i = 0; i < (m.rows * m.cols); ++i) {
         m.mem[i] -= cvmult.c * cvmult.m.mem[i];
+    }
+    return m;
+}
+
+Matrix const &operator+=(Matrix &lhs, Matrix const &rhs) {
+    for (size_t i = 0; i < (lhs.rows * rhs.rows); ++i) {
+        lhs.mem[i] += rhs.mem[i];
+    }
+    return lhs;
+}
+
+Matrix const &operator/=(Matrix &m, double constant) {
+    for (size_t i = 0; i < (m.rows * m.rows); ++i) {
+        m.mem[i] /= constant;
     }
     return m;
 }

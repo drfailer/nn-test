@@ -1,8 +1,42 @@
 #include "trainer.hpp"
 #include "cblas.h"
 #include <cstring>
-#include <iostream>
 #include <numeric>
+/* #define AVERAGE_MINIBATCH */
+
+/******************************************************************************/
+/*                                  helpers                                   */
+/******************************************************************************/
+
+GradW const &operator+=(GradW &lhs, GradW const &rhs) {
+    assert(lhs.size() == rhs.size());
+    for (size_t i = 0; i < lhs.size(); ++i) {
+        lhs[i] += rhs[i];
+    }
+    return lhs;
+}
+
+GradB const &operator+=(GradB &lhs, GradB const &rhs) {
+    assert(lhs.size() == rhs.size());
+    for (size_t i = 0; i < lhs.size(); ++i) {
+        lhs[i] += rhs[i];
+    }
+    return lhs;
+}
+
+GradW const &operator/=(GradW &lhs, double constant) {
+    for (size_t i = 0; i < lhs.size(); ++i) {
+        lhs[i] /= constant;
+    }
+    return lhs;
+}
+
+GradB const &operator/=(GradB &lhs, double constant) {
+    for (size_t i = 0; i < lhs.size(); ++i) {
+        lhs[i] /= constant;
+    }
+    return lhs;
+}
 
 /******************************************************************************/
 /*                           trainer implementation                           */
@@ -77,15 +111,35 @@ void Trainer::optimize(GradW const &grads_w, GradB const &grads_b,
     }
 }
 
+#ifdef AVERAGE_MINIBATCH
 void Trainer::update_minibatch(DataBase const &minibatch,
                                double learning_rate) {
-    // TODO: the grads_w and grads_b should be averaged
+    auto const &[x, gt] = minibatch[0];
+    auto [as, zs] = feedforward(x);
+    auto [total_grad_w, total_grad_b] = backpropagate(gt, as, zs);
+
+    for (size_t i = 1; i < minibatch.size(); ++i) {
+        auto const &[x, gt] = minibatch[i];
+        auto [as, zs] = feedforward(x);
+        auto [grads_w, grads_b] = backpropagate(gt, as, zs);
+        total_grad_w += grads_w;
+        total_grad_b += grads_b;
+    }
+    total_grad_w /= (double)minibatch.size();
+    total_grad_b /= (double)minibatch.size();
+
+    optimize(total_grad_w, total_grad_b, learning_rate);
+}
+#else
+void Trainer::update_minibatch(DataBase const &minibatch,
+                               double learning_rate) {
     for (auto const &[x, gt] : minibatch) {
         auto [as, zs] = feedforward(x);
         auto [grads_w, grads_b] = backpropagate(gt, as, zs);
         optimize(grads_w, grads_b, learning_rate);
     }
 }
+#endif
 
 void Trainer::train(DataBase const &db, size_t minibatch_size, size_t nb_epochs,
                     double learning_rate) {

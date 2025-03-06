@@ -118,8 +118,10 @@ struct LazyCVMult {
     Vector const &v;
 };
 
-LazyCVMult operator*(double constant, Vector const &vector);
+LazyCVMult operator*(double constant, Vector const &v);
 Vector const &operator-=(Vector &v, LazyCVMult const &cvmult);
+Vector const &operator+=(Vector &lhs, Vector const &rhs);
+Vector const &operator/=(Vector &v, double constant);
 
 struct LazyCMMult {
     double c;
@@ -128,5 +130,7 @@ struct LazyCMMult {
 
 LazyCMMult operator*(double constant, Matrix const &m);
 Matrix const &operator-=(Matrix &m, LazyCMMult const &cvmult);
+Matrix const &operator+=(Matrix &lhs, Matrix const &rhs);
+Matrix const &operator/=(Matrix &m, double constant);
 
 #endif
