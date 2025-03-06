@@ -1,10 +1,11 @@
 #ifndef LAYER_H
 #define LAYER_H
 #include <cstddef>
+#include "matrix.hpp"
 
 struct Layer {
-    double *weights;
-    double *biases;
+    Matrix weights;
+    Vector biases;
     size_t nb_nodes;
     size_t nb_inputs;
 };

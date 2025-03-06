@@ -1,6 +1,6 @@
 #include "model.hpp"
-#include <random>
 #include <iostream>
+#include <random>
 
 void Model::init(uint64_t seed) {
     std::mt19937_64 gen(seed);
@@ -11,40 +11,29 @@ void Model::init(uint64_t seed) {
         size_t layer_biases_size = layer.nb_nodes;
 
         for (size_t i = 0; i < layer_weight_size; ++i) {
-            layer.weights[i] = dist(gen);
+            layer.weights.mem[i] = dist(gen);
         }
 
         for (size_t i = 0; i < layer_biases_size; ++i) {
-            layer.biases[i] = dist(gen);
+            layer.biases.mem[i] = dist(gen);
         }
     }
 }
 
 void Model::add_layer(size_t nb_inputs, size_t nb_nodes) {
-    Layer layer;
-
     if (this->layers.size() > 0 && this->layers.back().nb_nodes != nb_inputs) {
         size_t lnb = this->layers.size();
 
         std::cerr << "error: layer " << lnb << " has "
                   << this->layers.back().nb_nodes << " nodes and layer "
-                  << (lnb + 1) << " has " << nb_inputs << " inputs." <<
-                  std::endl;
+                  << (lnb + 1) << " has " << nb_inputs << " inputs."
+                  << std::endl;
         clear();
         exit(1);
     }
 
-    layer.nb_inputs = nb_inputs;
-    layer.nb_nodes = nb_nodes;
-    layer.weights = new double[nb_nodes * nb_inputs];
-    layer.biases = new double[nb_nodes];
-    this->layers.push_back(layer);
+    this->layers.emplace_back(Matrix(nb_nodes, nb_inputs), Vector(nb_nodes),
+                              nb_nodes, nb_inputs);
 }
 
-void Model::clear() {
-    for (auto &layer : this->layers) {
-        delete[] layer.weights;
-        delete[] layer.biases;
-    }
-    layers.clear();
-}
+void Model::clear() { layers.clear(); }

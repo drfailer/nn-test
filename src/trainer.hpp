@@ -21,12 +21,11 @@ class Trainer {
     Vector cost_prime(Vector const &ground_truth, Vector const &y);
 
     std::pair<Vectors, Vectors> feedforward(Vector const &input);
-    std::pair<Vectors, Vectors> backpropagate(Vector const &ground_truth,
-                                              Vectors const &as,
-                                              Vectors const &zs);
+    std::pair<GradW, GradB> backpropagate(Vector const &ground_truth,
+                                          Vectors const &as, Vectors const &zs);
 
     void update_minibatch(DataBase const &minibatch, double learning_rate);
-    void optimize(Vectors const &grads_w, Vectors const &grads_b,
+    void optimize(GradW const &grads_w, GradB const &grads_b,
                   double learning_rate);
     void train(DataBase const &db, size_t minibatch_size, size_t nb_epochs,
                double learning_rate);

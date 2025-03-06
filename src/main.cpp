@@ -1,3 +1,4 @@
+#include "matrix.hpp"
 #include "model.hpp"
 #include "trainer.hpp"
 #include <cmath>
