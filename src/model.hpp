@@ -14,8 +14,12 @@ struct Model {
 
   public:
     void init(uint64_t seed);
-    void add_layer(size_t nb_inputs, size_t nb_nodes);
+    void input(size_t nb_inputs);
+    void add_layer(size_t nb_nodes);
     void clear();
+
+  private:
+    size_t inputs_ = 0;
 };
 
 #endif

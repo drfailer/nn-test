@@ -20,18 +20,20 @@ void Model::init(uint64_t seed) {
     }
 }
 
-void Model::add_layer(size_t nb_inputs, size_t nb_nodes) {
-    if (this->layers.size() > 0 && this->layers.back().nb_nodes != nb_inputs) {
-        size_t lnb = this->layers.size();
+void Model::input(size_t nb_inputs) { this->inputs_ = nb_inputs; }
 
-        std::cerr << "error: layer " << lnb << " has "
-                  << this->layers.back().nb_nodes << " nodes and layer "
-                  << (lnb + 1) << " has " << nb_inputs << " inputs."
+void Model::add_layer(size_t nb_nodes) {
+    if (inputs_ == 0) {
+        std::cerr << "error: the model must have at least 1 input. You must "
+                     "configure an input layer before adding layers."
                   << std::endl;
         clear();
         exit(1);
     }
-
+    size_t nb_inputs = inputs_;
+    if (!this->layers.empty()) {
+        nb_inputs = this->layers.back().nb_nodes;
+    }
     this->layers.emplace_back(Matrix(nb_nodes, nb_inputs), Vector(nb_nodes),
                               nb_nodes, nb_inputs);
 }

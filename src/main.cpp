@@ -130,9 +130,10 @@ int main(void) {
         loader.load_db("../data/mnist/t10k-labels-idx1-ubyte",
                        "../data/mnist/t10k-images-idx3-ubyte");
 
-    m.add_layer(28 * 28, 32);
-    m.add_layer(32, 32);
-    m.add_layer(32, 10);
+    m.input(28 * 28);
+    m.add_layer(32);
+    m.add_layer(32);
+    m.add_layer(10);
     m.init(0);
 
     /* mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 10'000, 0.006, 16); */
