@@ -1,8 +1,10 @@
 #include "matrix.hpp"
+#include "mnist/minist_loader.hpp"
 #include "model.hpp"
 #include "trainer.hpp"
 #include <cmath>
 #include <iostream>
+#include <random>
 
 DataBase OR_train = {
     {{0, 0}, {0}},
@@ -64,19 +66,70 @@ void train_eval(Trainer t, DataBase const &db, size_t nb_epochs,
     std::cout << "evaluation: " << t.evaluate(db) << std::endl;
 }
 
+void mnist_print_activation(Vector const &activation, Vector const &gt) {
+    size_t max_idx = 0;
+    size_t expected_solution = 0;
+
+    std::cout << "activation = [ ";
+    for (size_t i = 0; i < activation.size; ++i) {
+        if (activation[i] > activation[max_idx]) {
+            max_idx = i;
+        }
+        std::cout << activation[i] << " ";
+    }
+    for (size_t i = 0; i < gt.size; ++i) {
+        if (gt[i] == 1) {
+            expected_solution = i;
+        }
+    }
+    std::cout << "] expected = " << expected_solution << " found = " << max_idx
+              << std::endl;
+}
+
+void mnist_train_and_eval(Trainer t, DataBase const &train_db,
+                          DataBase const &test_db, size_t nb_epochs,
+                          double l_rate, size_t minibatch_size) {
+    std::mt19937 gen(0);
+    std::uniform_int_distribution<size_t> dist(0, test_db.size());
+
+    t.train(train_db, minibatch_size, nb_epochs, l_rate);
+
+    for (size_t i = 0; i < 10; ++i) {
+        auto [as, zs] = t.feedforward(test_db[i].input);
+        mnist_print_activation(as.back(), test_db[i].ground_truth);
+    }
+    std::cout << "average cost after training: " << t.evaluate(test_db)
+              << std::endl;
+}
+
 int main(void) {
+    MNISTLoader loader;
     Model m;
     Trainer t(&m, &sigmoid, &sigmoid_prime, &quadratic_loss,
               &quadratic_loss_prime);
 
-    m.add_layer(2, 2);
-    m.add_layer(2, 1);
+    DataBase mnist_train_db =
+        loader.load_db("../data/mnist/train-labels-idx1-ubyte",
+                       "../data/mnist/train-images-idx3-ubyte");
+    DataBase mnist_test_db =
+        loader.load_db("../data/mnist/t10k-labels-idx1-ubyte",
+                       "../data/mnist/t10k-images-idx3-ubyte");
+
+    m.add_layer(28 * 28, 32);
+    m.add_layer(32, 32);
+    m.add_layer(32, 10);
     m.init(0);
 
-    train_eval(t, OR_train, 100'000, 0.004);
-    train_eval(t, AND_train, 100'000, 0.004);
-    train_eval(t, XOR_train, 100'000, 0.004);
+    mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 10'000, 0.006, 8);
 
-    m.clear();
+    /* for (size_t i = 0; i < 1000; ++i) { */
+    /*     t.train(mnist_train_db, 8, 1, 0.006); */
+    /*     std::cout << "average cost after training: " */
+    /*               << t.evaluate(mnist_test_db) << std::endl; */
+    /* } */
+
+    /* train_eval(t, OR_train, 100'000, 0.004); */
+    /* train_eval(t, AND_train, 100'000, 0.004); */
+    /* train_eval(t, XOR_train, 100'000, 0.004); */
     return 0;
 }
