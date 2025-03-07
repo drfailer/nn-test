@@ -66,7 +66,7 @@ class MNISTLoader {
             for (size_t px = 0; px < image.size; ++px) {
                 char px_value;
                 fs.read(&px_value, 1);
-                image[px] = px_value;
+                image[px] = (double) px_value / 255.;
             }
             images[i] = std::move(image);
         }
