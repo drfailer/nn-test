@@ -19,33 +19,35 @@ struct Matrix {
         : mem(new double[rows * cols]), rows(rows), cols(cols) {}
 
     Matrix(Matrix const &m) : Matrix(m.rows, m.cols) {
-        memcpy(this->mem, m.mem, rows * cols * sizeof(*mem));
+        memcpy(mem, m.mem, rows * cols * sizeof(*mem));
     }
     Matrix const &operator=(Matrix const &m) {
         if (&m == this) return *this;
-        delete[] this->mem;
-        this->mem = new double[m.rows * m.cols];
-        this->rows = m.rows;
-        this->cols = m.cols;
-        memcpy(this->mem, m.mem, rows * cols * sizeof(*mem));
+        if (rows * cols != m.rows * m.cols) {
+            delete[] mem;
+            mem = new double[m.rows * m.cols];
+        }
+        rows = m.rows;
+        cols = m.cols;
+        memcpy(mem, m.mem, rows * cols * sizeof(*mem));
         return *this;
     }
 
     Matrix(Matrix &&m) : mem(nullptr), rows(m.rows), cols(m.cols) {
-        std::swap(this->mem, m.mem);
+        std::swap(mem, m.mem);
     }
     Matrix const &operator=(Matrix &&m) {
-        this->rows = m.rows;
-        this->cols = m.cols;
-        std::swap(this->mem, m.mem);
+        rows = m.rows;
+        cols = m.cols;
+        std::swap(mem, m.mem);
         return *this;
     }
 
     ~Matrix() {
-        delete[] this->mem;
-        this->mem = nullptr;
-        this->rows = 0;
-        this->cols = 0;
+        delete[] mem;
+        mem = nullptr;
+        rows = 0;
+        cols = 0;
     }
 
     double *operator[](size_t idx) { return &mem[idx * cols]; }
@@ -63,11 +65,11 @@ struct Vector {
     }
 
     Vector(Vector &&v) : mem(nullptr), size(v.size) {
-        std::swap(this->mem, v.mem);
+        std::swap(mem, v.mem);
     }
     Vector const &operator=(Vector &&v) {
-        this->size = v.size;
-        std::swap(this->mem, v.mem);
+        size = v.size;
+        std::swap(mem, v.mem);
         return *this;
     }
 
@@ -76,16 +78,19 @@ struct Vector {
     }
     Vector const &operator=(Vector const &v) {
         if (&v == this) return *this;
-        delete[] this->mem;
-        this->mem = new double[v.size];
-        this->size = v.size;
+        if (size != v.size) {
+            delete[] mem;
+            mem = new double[v.size];
+        }
+        size = v.size;
+        memcpy(mem, v.mem, size * sizeof(*mem));
         return *this;
     }
 
     ~Vector() {
-        delete[] this->mem;
-        this->mem = nullptr;
-        this->size = 0;
+        delete[] mem;
+        mem = nullptr;
+        size = 0;
     }
 
     Vector clone() const {

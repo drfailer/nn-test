@@ -4,7 +4,13 @@
 #include <vector>
 
 using Vectors = std::vector<Vector>;
-using DataBase = std::vector<std::pair<Vector, Vector>>;
+
+struct DataBaseEntry {
+    Vector input;
+    Vector ground_truth;
+};
+
+using DataBase = std::vector<DataBaseEntry>;
 
 using GradW = std::vector<Matrix>;
 using GradB = std::vector<Vector>;

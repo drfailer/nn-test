@@ -1,5 +1,6 @@
 #ifndef TRAINER_H
 #define TRAINER_H
+#include "minibatch_generator.hpp"
 #include "model.hpp"
 #include "types.hpp"
 #include <cassert>
@@ -24,11 +25,12 @@ class Trainer {
     std::pair<GradW, GradB> backpropagate(Vector const &ground_truth,
                                           Vectors const &as, Vectors const &zs);
 
-    void update_minibatch(DataBase const &minibatch, double learning_rate);
+    void update_minibatch(MinibatchGenerator const &minibatch,
+                          double learning_rate);
     void optimize(GradW const &grads_w, GradB const &grads_b,
                   double learning_rate);
     void train(DataBase const &db, size_t minibatch_size, size_t nb_epochs,
-               double learning_rate);
+               double learning_rate, uint32_t seed = 0);
     double evaluate(DataBase const &test_db);
 
   private:

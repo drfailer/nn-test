@@ -47,18 +47,18 @@ void train_eval(Trainer t, DataBase const &db, size_t nb_epochs,
                 double l_rate) {
     std::cout << "start value:" << std::endl;
     for (auto const &elt : db) {
-        auto [as, zs] = t.feedforward(elt.first);
+        auto [as, zs] = t.feedforward(elt.input);
         std::cout << "found: " << as.back()[0]
-                  << "; expected: " << elt.second[0] << std::endl;
+                  << "; expected: " << elt.ground_truth[0] << std::endl;
     }
 
     t.train(db, 4, nb_epochs, l_rate);
 
     std::cout << "after train:" << std::endl;
     for (auto const &elt : db) {
-        auto [as, zs] = t.feedforward(elt.first);
+        auto [as, zs] = t.feedforward(elt.input);
         std::cout << "found: " << as.back()[0]
-                  << "; expected: " << elt.second[0] << std::endl;
+                  << "; expected: " << elt.ground_truth[0] << std::endl;
     }
 
     std::cout << "evaluation: " << t.evaluate(db) << std::endl;

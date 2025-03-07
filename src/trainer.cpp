@@ -1,8 +1,9 @@
 #include "trainer.hpp"
 #include "cblas.h"
+#include "types.hpp"
 #include <cstring>
 #include <numeric>
-/* #define AVERAGE_MINIBATCH */
+#define AVERAGE_MINIBATCH
 
 /******************************************************************************/
 /*                                  helpers                                   */
@@ -39,7 +40,7 @@ GradB const &operator/=(GradB &lhs, double constant) {
 }
 
 /******************************************************************************/
-/*                           trainer implementation                           */
+/*                           trainer implementation */
 /******************************************************************************/
 
 Vector Trainer::act(Vector const &z) { return map(act_, z); }
@@ -112,14 +113,14 @@ void Trainer::optimize(GradW const &grads_w, GradB const &grads_b,
 }
 
 #ifdef AVERAGE_MINIBATCH
-void Trainer::update_minibatch(DataBase const &minibatch,
+void Trainer::update_minibatch(MinibatchGenerator const &minibatch,
                                double learning_rate) {
-    auto const &[x, gt] = minibatch[0];
+    auto const &[x, gt] = minibatch.get(0);
     auto [as, zs] = feedforward(x);
     auto [total_grad_w, total_grad_b] = backpropagate(gt, as, zs);
 
     for (size_t i = 1; i < minibatch.size(); ++i) {
-        auto const &[x, gt] = minibatch[i];
+        auto const &[x, gt] = minibatch.get(i);
         auto [as, zs] = feedforward(x);
         auto [grads_w, grads_b] = backpropagate(gt, as, zs);
         total_grad_w += grads_w;
@@ -131,9 +132,10 @@ void Trainer::update_minibatch(DataBase const &minibatch,
     optimize(total_grad_w, total_grad_b, learning_rate);
 }
 #else
-void Trainer::update_minibatch(DataBase const &minibatch,
+void Trainer::update_minibatch(MinibatchGenerator const &minibatch,
                                double learning_rate) {
-    for (auto const &[x, gt] : minibatch) {
+    for (size_t i = 0; i < minibatch.size(); ++i) {
+        auto const &[x, gt] = minibatch.get(i);
         auto [as, zs] = feedforward(x);
         auto [grads_w, grads_b] = backpropagate(gt, as, zs);
         optimize(grads_w, grads_b, learning_rate);
@@ -142,10 +144,13 @@ void Trainer::update_minibatch(DataBase const &minibatch,
 #endif
 
 void Trainer::train(DataBase const &db, size_t minibatch_size, size_t nb_epochs,
-                    double learning_rate) {
+                    double learning_rate, uint32_t seed) {
+    assert(db.size() >= minibatch_size);
+    MinibatchGenerator minibatch(minibatch_size, seed);
+
     for (size_t epoch = 0; epoch < nb_epochs; ++epoch) {
-        // TODO: take a random sample of the db to build the minibatch
-        update_minibatch(db, learning_rate);
+        minibatch.generate(db);
+        update_minibatch(minibatch, learning_rate);
     }
 }
 
@@ -153,8 +158,8 @@ double Trainer::evaluate(DataBase const &test_db) {
     double result = 0;
 
     for (auto const &elt : test_db) {
-        auto [as, zs] = feedforward(elt.first);
-        auto costs = cost(elt.second, as.back());
+        auto [as, zs] = feedforward(elt.input);
+        auto costs = cost(elt.ground_truth, as.back());
         result += std::accumulate(costs.mem, costs.mem + costs.size, 0.0) /
                   costs.size;
     }
