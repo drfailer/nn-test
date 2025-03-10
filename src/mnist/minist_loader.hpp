@@ -94,7 +94,7 @@ class MNISTLoader {
         return db;
     }
 
-    void print_image(Vector const &image, size_t rows, size_t cols) {
+    static void print_image(Vector const &image, size_t rows, size_t cols) {
         for (size_t i = 0; i < rows; ++i) {
             for (size_t j = 0; j < cols; ++j) {
                 if (image[i * cols + j] == 0) {
