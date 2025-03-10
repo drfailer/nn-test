@@ -6,21 +6,25 @@
 
 class MinibatchGenerator {
   public:
-    MinibatchGenerator(size_t size, uint32_t seed)
-        : size_(size), indexes_(size), gen_(seed) {
-        for (size_t i = 0; i < size; ++i) {
+    MinibatchGenerator(DataBase const &db, size_t size, uint32_t seed)
+        : db_(&db), size_(size), indexes_(db.size()), gen_(seed), offset_(0) {
+        for (size_t i = 0; i < db.size(); ++i) {
             indexes_[i] = i;
+        }
+        std::shuffle(indexes_.begin(), indexes_.end(), gen_);
+    }
+
+    void generate() {
+        if (offset_ + size_ >= db_->size()) {
+            offset_ = 0;
+            std::shuffle(indexes_.begin(), indexes_.end(), gen_);
+        } else {
+            offset_ += size_;
         }
     }
 
-    void generate(DataBase const &db) {
-        this->db_ = &db;
-        std::uniform_int_distribution<size_t> dist(0, size_);
-        std::random_shuffle(indexes_.begin(), indexes_.end());
-    }
-
     DataBaseEntry const &get(size_t idx) const {
-        return (*db_)[indexes_[idx]];
+        return (*db_)[indexes_[offset_ + idx]];
     }
 
     size_t size() const { return size_; }
@@ -30,6 +34,7 @@ class MinibatchGenerator {
     size_t size_ = 0;
     std::vector<size_t> indexes_;
     std::mt19937 gen_;
+    size_t offset_ = 0;
 };
 
 #endif
