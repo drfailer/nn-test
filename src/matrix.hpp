@@ -4,6 +4,7 @@
 #include <cstring>
 #include <functional>
 #include <initializer_list>
+#include <type_traits>
 
 /******************************************************************************/
 /*                                   types                                    */
@@ -103,6 +104,14 @@ struct Vector {
     double const &operator[](size_t idx) const { return mem[idx]; }
 };
 
+template <typename MatrixType>
+    requires std::is_same_v<MatrixType, Matrix> ||
+             std::is_same_v<MatrixType, Vector>
+struct T {
+    MatrixType const &matrix;
+    explicit T(MatrixType const &matrix): matrix(matrix) {}
+};
+
 /******************************************************************************/
 /*                                 functions                                  */
 /******************************************************************************/
@@ -110,8 +119,8 @@ struct Vector {
 Vector map(std::function<double(double)> fun, Vector const &v);
 Vector map(std::function<double(double, double)> fun, Vector const &v1,
            Vector const &v2);
-Vector matmul(Matrix const &weights, Vector &err);
-Matrix matmul(Vector const &err, Vector const &a);
+Vector matmul(T<Matrix> const &weightsT, Vector &err);
+Matrix matmul(Vector const &err, T<Vector> const &aT);
 Vector hadamard(Vector &&a, Vector const &b);
 
 /******************************************************************************/
