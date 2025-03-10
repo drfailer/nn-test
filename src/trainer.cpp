@@ -25,20 +25,6 @@ GradB const &operator+=(GradB &lhs, GradB const &rhs) {
     return lhs;
 }
 
-GradW const &operator/=(GradW &lhs, double constant) {
-    for (size_t i = 0; i < lhs.size(); ++i) {
-        lhs[i] /= constant;
-    }
-    return lhs;
-}
-
-GradB const &operator/=(GradB &lhs, double constant) {
-    for (size_t i = 0; i < lhs.size(); ++i) {
-        lhs[i] /= constant;
-    }
-    return lhs;
-}
-
 /******************************************************************************/
 /*                           trainer implementation */
 /******************************************************************************/
@@ -71,8 +57,8 @@ std::pair<Vectors, Vectors> Trainer::feedforward(Vector const &input) {
     Vectors as = {input.clone()};
 
     for (auto const &layer : model_->layers) {
-        zs.emplace_back(compute_z(layer, as.back()));
-        as.emplace_back(act(zs.back()));
+        zs.push_back(compute_z(layer, as.back()));
+        as.push_back(act(zs.back()));
     }
     return {as, zs};
 }
@@ -88,13 +74,13 @@ std::pair<GradW, GradB> Trainer::backpropagate(Vector const &ground_truth,
     GradW grads_w(L);
 
     grads_b[L - 1] = err.clone();
-    grads_w[L - 1] = matmul(err, as[as.size() - 2]);
+    grads_w[L - 1] = matmul(err, T(as[as.size() - 2]));
 
     for (size_t l = 2; l <= L; ++l) {
-        err = hadamard(matmul(layers[L - l + 1].weights, err),
+        err = hadamard(matmul(T(layers[L - l + 1].weights), err),
                        act_prime(zs[zs.size() - l]));
         grads_b[L - l] = err.clone();
-        grads_w[L - l] = matmul(err, as[as.size() - l - 1]);
+        grads_w[L - l] = matmul(err, T(as[as.size() - l - 1]));
     }
     return {grads_w, grads_b};
 }
@@ -126,10 +112,8 @@ void Trainer::update_minibatch(MinibatchGenerator const &minibatch,
         total_grad_w += grads_w;
         total_grad_b += grads_b;
     }
-    total_grad_w /= (double)minibatch.size();
-    total_grad_b /= (double)minibatch.size();
-
-    optimize(total_grad_w, total_grad_b, learning_rate);
+    optimize(total_grad_w, total_grad_b,
+             learning_rate / (double)minibatch.size());
 }
 #else
 void Trainer::update_minibatch(MinibatchGenerator const &minibatch,
@@ -146,10 +130,10 @@ void Trainer::update_minibatch(MinibatchGenerator const &minibatch,
 void Trainer::train(DataBase const &db, size_t minibatch_size, size_t nb_epochs,
                     double learning_rate, uint32_t seed) {
     assert(db.size() >= minibatch_size);
-    MinibatchGenerator minibatch(minibatch_size, seed);
+    MinibatchGenerator minibatch(db, minibatch_size, seed);
 
     for (size_t epoch = 0; epoch < nb_epochs; ++epoch) {
-        minibatch.generate(db);
+        minibatch.generate();
         update_minibatch(minibatch, learning_rate);
     }
 }
