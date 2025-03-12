@@ -8,7 +8,7 @@
 /******************************************************************************/
 
 Vector map(std::function<double(double)> fun, Vector const &v) {
-    Vector result = v.clone();
+    Vector result(v.size);
 
     for (size_t i = 0; i < v.size; ++i) {
         result[i] = fun(v[i]);
@@ -18,7 +18,7 @@ Vector map(std::function<double(double)> fun, Vector const &v) {
 
 Vector map(std::function<double(double, double)> fun, Vector const &v1,
                     Vector const &v2) {
-    Vector result = v1.clone();
+    Vector result(v1.size);
 
     assert(v1.size == v2.size);
     for (size_t i = 0; i < v1.size; ++i) {
