@@ -3,6 +3,7 @@
 #include "types.hpp"
 #include <cstdint>
 #include <random>
+#include <algorithm>
 
 class MinibatchGenerator {
   public:
