@@ -155,12 +155,12 @@ Then we compute the gradiant of all the nodes using the back propagation
     \Procedure{BackPropagate}{$as$, $zs$, $weights$, $biases$}
       \State $deltas$ = cost'($as[len(as) - 1]$, $expected\_solution$) $\odot$ act'($zs[len(zs) - 1]$)
       \State $grads\_b[L - 1]$ = $deltas$
-      \State $grads\_w[L - 1]$ = matmul($deltas$, $as[len(as) - 2]$) \\
+      \State $grads\_w[L - 1]$ = matmul($deltas$, T($as[len(as) - 2]$)) \\
 
       \For{$l$ in $2..\leq L$}
         \State $deltas$ = matmul(T($weights[L - l + 1]$), $deltas$) $\odot$ act'($zs[len(zs) - l]$)
         \State $grads\_b[L - l]$ = $deltas$
-        \State $grads\_w[L - l]$ = matmul($deltas$, $as[len(as) - l - 1]$)
+        \State $grads\_w[L - l]$ = matmul($deltas$, T($as[len(as) - l - 1]$))
       \EndFor
 
       \State \textbf{return} $grads\_w$, $grads\_b$
