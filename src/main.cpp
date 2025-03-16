@@ -178,9 +178,12 @@ int main(void) {
 
     m.init(r());
 
-    mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 100'000, 1, 8);
-    mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 100'000, 0.1, 8);
-    mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 100'000, 0.01, 8);
+    // this learns fast without the AVERAGE_MINIBATCH
+    mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 30, 0.01, 60'000);
+
+    /* mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 100'000, 1, 8); */
+    /* mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 100'000, 0.1, 8); */
+    /* mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 100'000, 0.01, 8); */
 
     /* t.train(mnist_train_db, 8, 100, 0.002, r()); */
     /* std::cout << "evaluation (train): " << mnist_eval(t, mnist_train_db) */
