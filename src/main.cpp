@@ -78,7 +78,7 @@ void test_compute_z() {
     a[0] = 10;
     a[1] = 100;
 
-    Vector z = t.compute_z(Layer{ w, b, 2, 2 }, a);
+    Vector z = t.compute_z(Layer{w, b, 2, 2}, a);
     assert(211 == z[0]);
     assert(432 == z[1]);
 }
@@ -178,7 +178,9 @@ int main(void) {
 
     m.init(r());
 
-    mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 10'000, 0.002, 8);
+    mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 100'000, 1, 8);
+    mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 100'000, 0.1, 8);
+    mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 100'000, 0.01, 8);
 
     /* t.train(mnist_train_db, 8, 100, 0.002, r()); */
     /* std::cout << "evaluation (train): " << mnist_eval(t, mnist_train_db) */
@@ -189,9 +191,9 @@ int main(void) {
     /* for (size_t i = 0; i < 1000; ++i) { */
     /*     t.train(mnist_train_db, 8, 100, 0.002, r()); */
     /*     std::cout << "evaluation (train): " << mnist_eval(t, mnist_train_db) */
-    /*               << std::endl; */
+    /*               << ", loss = " << t.evaluate(mnist_train_db) << std::endl; */
     /*     std::cout << "evaluation (test): " << mnist_eval(t, mnist_test_db) */
-    /*               << std::endl; */
+    /*               << ", loss = " << t.evaluate(mnist_test_db) << std::endl; */
     /* } */
 
     /* train_eval(t, OR_train, 100'000, 0.004); */
