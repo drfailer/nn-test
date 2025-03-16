@@ -5,6 +5,10 @@
 void Model::init(uint64_t seed) {
     std::mt19937_64 gen(seed);
     std::normal_distribution dist(.0, 1.0);
+    // BUG: there is an issue with the following distribution: when used with
+    // mnist dataset, the error is constant (always 0.05) and the model is not
+    // trained???
+    /* std::normal_distribution dist(-0.5, 0.5); */
 
     for (auto &layer : this->layers) {
         size_t layer_weight_size = layer.nb_nodes * layer.nb_inputs;
