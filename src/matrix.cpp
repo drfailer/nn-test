@@ -99,14 +99,14 @@ Matrix const &operator-=(Matrix &m, LazyCMMult const &cvmult) {
 }
 
 Matrix const &operator+=(Matrix &lhs, Matrix const &rhs) {
-    for (size_t i = 0; i < (lhs.rows * rhs.rows); ++i) {
+    for (size_t i = 0; i < (lhs.rows * rhs.cols); ++i) {
         lhs.mem[i] += rhs.mem[i];
     }
     return lhs;
 }
 
 Matrix const &operator/=(Matrix &m, double constant) {
-    for (size_t i = 0; i < (m.rows * m.rows); ++i) {
+    for (size_t i = 0; i < (m.rows * m.cols); ++i) {
         m.mem[i] /= constant;
     }
     return m;
