@@ -2,6 +2,7 @@
 #define MNIST_MINIST_LOADER_H
 #include "../matrix.hpp"
 #include "../types.hpp"
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -9,8 +10,12 @@
 
 class MNISTLoader {
   public:
-    unsigned int read_big_endian_uint(std::ifstream &fs) {
-        char buff[4];
+    using byte = char;
+    using ifstream_type = std::basic_ifstream<byte>;
+
+  public:
+    unsigned int read_big_endian_uint(ifstream_type &fs) {
+        byte buff[4];
         fs.read(buff, 4);
         std::swap(buff[0], buff[3]);
         std::swap(buff[1], buff[2]);
@@ -18,7 +23,7 @@ class MNISTLoader {
     }
 
     std::vector<int> load_labels(std::string const &path) {
-        std::ifstream fs(path);
+        ifstream_type fs(path, std::ios::binary);
         [[maybe_unused]] unsigned int magic = 0, size = 0;
 
         if (!fs.is_open()) {
@@ -34,15 +39,15 @@ class MNISTLoader {
 
         std::vector<int> labels(size);
         for (size_t i = 0; i < size; ++i) {
-            char label;
+            byte label;
             fs.read(&label, 1);
-            labels[i] = label;
+            labels[i] = int(label);
         }
         return labels;
     }
 
     std::vector<Vector> load_imgages(std::string const &path) {
-        std::ifstream fs(path);
+        ifstream_type fs(path, std::ios::binary);
         [[maybe_unused]] unsigned int magic = 0, size = 0, rows = 0, cols = 0;
 
         if (!fs.is_open()) {
@@ -64,8 +69,9 @@ class MNISTLoader {
         for (size_t i = 0; i < size; ++i) {
             Vector image(rows * cols);
             for (size_t px = 0; px < image.size; ++px) {
-                char px_value;
-                fs.read(&px_value, 1);
+                unsigned char px_value;
+                fs.get(reinterpret_cast<byte&>(px_value));
+                assert(0 <= px_value && px_value <= 255);
                 image[px] = (double) px_value / 255.;
             }
             images[i] = std::move(image);
