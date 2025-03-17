@@ -101,7 +101,7 @@ void train_eval(Trainer t, DataBase const &db, size_t nb_epochs,
                   << "; expected: " << elt.ground_truth[0] << std::endl;
     }
 
-    std::cout << "evaluation: " << t.evaluate(db) << std::endl;
+    std::cout << "evaluation: " << t.evaluate_cost(db) << std::endl;
 }
 
 int get_label(Vector const &v) {
@@ -124,20 +124,6 @@ void mnist_print_activation(Vector const &activation, Vector const &gt) {
               << " found = " << get_label(activation) << std::endl;
 }
 
-double mnist_eval(Trainer t, DataBase const &test_db) {
-    size_t count_valid = 0;
-
-    for (auto const &elt : test_db) {
-        auto [as, zs] = t.feedforward(elt.input);
-        int found = get_label(as.back());
-        int expected = get_label(elt.ground_truth);
-        if (found == expected) {
-            ++count_valid;
-        }
-    }
-    return 100 * ((double)count_valid / (double)test_db.size());
-}
-
 void mnist_train_and_eval(Trainer t, DataBase const &train_db,
                           DataBase const &test_db, size_t nb_epochs,
                           double l_rate, size_t minibatch_size) {
@@ -150,9 +136,9 @@ void mnist_train_and_eval(Trainer t, DataBase const &train_db,
         MNISTLoader::print_image(test_db[i].input, 28, 28);
         mnist_print_activation(as.back(), test_db[i].ground_truth);
     }
-    std::cout << "average cost after training: " << t.evaluate(test_db)
-              << std::endl;
-    std::cout << "evaluation: " << mnist_eval(t, test_db) << "%" << std::endl;
+    auto eval = t.evaluate(test_db);
+    std::cout << "average cost after training: " << eval.first << std::endl;
+    std::cout << "evaluation: " << eval.second << "%" << std::endl;
 }
 
 int main(void) {
@@ -179,11 +165,12 @@ int main(void) {
     m.init(r());
 
     // this learns fast without the AVERAGE_MINIBATCH
-    mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 30, 0.01, 60'000);
+    /* mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 30, 0.01, 60'000); */
+    /* mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 30 * 60'000, 0.01, 1); */
 
-    /* mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 100'000, 1, 8); */
-    /* mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 100'000, 0.1, 8); */
-    /* mnist_train_and_eval(t, mnist_train_db, mnist_test_db, 100'000, 0.01, 8); */
+    /* t.train_dump("train_8_1_1000000.out", mnist_train_db, mnist_test_db, 8, 1'000, 1); */
+    /* t.train_dump("train_8_01_1000000.out", mnist_train_db, mnist_test_db, 8, 1'000, 0.1); */
+    /* t.train_dump("train_60000_001_30.out", mnist_train_db, mnist_test_db, 60'000, 30, 0.01); */
 
     /* t.train(mnist_train_db, 8, 100, 0.002, r()); */
     /* std::cout << "evaluation (train): " << mnist_eval(t, mnist_train_db) */
@@ -193,10 +180,13 @@ int main(void) {
 
     /* for (size_t i = 0; i < 1000; ++i) { */
     /*     t.train(mnist_train_db, 8, 100, 0.002, r()); */
-    /*     std::cout << "evaluation (train): " << mnist_eval(t, mnist_train_db) */
-    /*               << ", loss = " << t.evaluate(mnist_train_db) << std::endl; */
+    /*     std::cout << "evaluation (train): " << mnist_eval(t, mnist_train_db)
+     */
+    /*               << ", loss = " << t.evaluate(mnist_train_db) << std::endl;
+     */
     /*     std::cout << "evaluation (test): " << mnist_eval(t, mnist_test_db) */
-    /*               << ", loss = " << t.evaluate(mnist_test_db) << std::endl; */
+    /*               << ", loss = " << t.evaluate(mnist_test_db) << std::endl;
+     */
     /* } */
 
     /* train_eval(t, OR_train, 100'000, 0.004); */
