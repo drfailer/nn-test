@@ -2,7 +2,10 @@
 #include "cblas.h"
 #include "types.hpp"
 #include <cstring>
+#include <fstream>
+#include <iostream>
 #include <numeric>
+#include <algorithm>
 #define AVERAGE_MINIBATCH
 
 /******************************************************************************/
@@ -29,19 +32,19 @@ GradB const &operator+=(GradB &lhs, GradB const &rhs) {
 /*                           trainer implementation */
 /******************************************************************************/
 
-Vector Trainer::act(Vector const &z) { return map(act_, z); }
+Vector Trainer::act(Vector const &z) const { return map(act_, z); }
 
-Vector Trainer::act_prime(Vector const &z) { return map(act_prime_, z); }
+Vector Trainer::act_prime(Vector const &z) const { return map(act_prime_, z); }
 
-Vector Trainer::cost(Vector const &ground_truth, Vector const &y) {
+Vector Trainer::cost(Vector const &ground_truth, Vector const &y) const {
     return map(cost_, ground_truth, y);
 }
 
-Vector Trainer::cost_prime(Vector const &ground_truth, Vector const &y) {
+Vector Trainer::cost_prime(Vector const &ground_truth, Vector const &y) const {
     return map(cost_prime_, ground_truth, y);
 }
 
-Vector Trainer::compute_z(Layer const &layer, Vector const &a) {
+Vector Trainer::compute_z(Layer const &layer, Vector const &a) const {
     assert(a.size == layer.nb_inputs);
     Vector z = layer.biases.clone();
 
@@ -52,7 +55,7 @@ Vector Trainer::compute_z(Layer const &layer, Vector const &a) {
     return z;
 }
 
-std::pair<Vectors, Vectors> Trainer::feedforward(Vector const &input) {
+std::pair<Vectors, Vectors> Trainer::feedforward(Vector const &input) const {
     Vectors zs = {};
     Vectors as = {input.clone()};
 
@@ -65,7 +68,7 @@ std::pair<Vectors, Vectors> Trainer::feedforward(Vector const &input) {
 
 std::pair<GradW, GradB> Trainer::backpropagate(Vector const &ground_truth,
                                                Vectors const &as,
-                                               Vectors const &zs) {
+                                               Vectors const &zs) const {
     size_t L = model_->layers.size();
     auto &layers = model_->layers;
     Vector err =
@@ -138,14 +141,111 @@ void Trainer::train(DataBase const &db, size_t minibatch_size, size_t nb_epochs,
     }
 }
 
-double Trainer::evaluate(DataBase const &test_db) {
-    double result = 0;
+/*
+ * Train the model and dump the accuracy and the cost for the train and test
+ * datasets at each epoch in the given file. The format is the following:
+ * - nb_epochs minibatch_size learning_rate
+ * - train costs
+ * - train accuracy
+ * - test costs
+ * - test accuracy
+ */
+void Trainer::train_dump(std::string const &filename, DataBase const &train_db,
+                         DataBase const &test_db, size_t minibatch_size,
+                         size_t nb_epochs, double learning_rate,
+                         uint32_t seed) {
+    assert(train_db.size() >= minibatch_size);
+    MinibatchGenerator minibatch(train_db, minibatch_size, seed);
+    std::ofstream fs(filename, std::ios::binary);
+    std::vector<double> costs_train(nb_epochs);
+    std::vector<double> costs_test(nb_epochs);
+    std::vector<double> accuracy_train(nb_epochs);
+    std::vector<double> accuracy_test(nb_epochs);
+    size_t loading_count = std::max<size_t>(1, nb_epochs / 100);
 
-    for (auto const &elt : test_db) {
+    fs.write(reinterpret_cast<char const *>(&nb_epochs), sizeof(size_t));
+    fs.write(reinterpret_cast<char const *>(&minibatch_size), sizeof(size_t));
+    fs.write(reinterpret_cast<char const *>(&learning_rate), sizeof(double));
+    for (size_t epoch = 0; epoch < nb_epochs; ++epoch) {
+        minibatch.generate();
+        update_minibatch(minibatch, learning_rate);
+        auto eval_train = evaluate(train_db);
+        auto eval_test = evaluate(test_db);
+        costs_train[epoch] = eval_train.first;
+        costs_test[epoch] = eval_test.first;
+        accuracy_train[epoch] = eval_train.second;
+        accuracy_test[epoch] = eval_test.second;
+        if (epoch % loading_count == 0) {
+            std::cout << 100 * epoch / nb_epochs << " %" << std::endl;
+        }
+    }
+
+    fs.write(reinterpret_cast<char const *>(costs_train.data()),
+             nb_epochs * sizeof(double));
+    fs.write(reinterpret_cast<char const *>(accuracy_train.data()),
+             nb_epochs * sizeof(double));
+    fs.write(reinterpret_cast<char const *>(costs_test.data()),
+             nb_epochs * sizeof(double));
+    fs.write(reinterpret_cast<char const *>(accuracy_test.data()),
+             nb_epochs * sizeof(double));
+}
+
+int Trainer::get_expected_label(Vector const &v) const {
+    int max_idx = 0;
+
+    for (size_t i = 0; i < v.size; ++i) {
+        if (v[i] > v[max_idx]) {
+            max_idx = i;
+        }
+    }
+    return max_idx;
+}
+
+double Trainer::evaluate_cost(DataBase const &db) const {
+    double cost_sum = 0;
+
+    for (auto const &elt : db) {
         auto [as, zs] = feedforward(elt.input);
         auto costs = cost(elt.ground_truth, as.back());
-        result += std::accumulate(costs.mem, costs.mem + costs.size, 0.0) /
-                  costs.size;
+        cost_sum += std::accumulate(costs.mem, costs.mem + costs.size, 0.0) /
+                    costs.size;
     }
-    return result / test_db.size();
+    return cost_sum / db.size();
+}
+
+double Trainer::evaluate_accuracy(DataBase const &db) const {
+    size_t count_valid = 0;
+
+    for (auto const &elt : db) {
+        auto [as, zs] = feedforward(elt.input);
+        int found = get_expected_label(as.back());
+        int expected = get_expected_label(elt.ground_truth);
+        if (found == expected) {
+            ++count_valid;
+        }
+    }
+    return 100 * ((double)count_valid / (double)db.size());
+}
+
+std::pair<double, double> Trainer::evaluate(DataBase const &db) const {
+    size_t count_valid = 0;
+    double cost_sum = 0;
+    double avg_cost = 0;
+    double accuracy = 0;
+
+    for (auto const &elt : db) {
+        auto [as, zs] = feedforward(elt.input);
+        auto costs = cost(elt.ground_truth, as.back());
+        int found = get_expected_label(as.back());
+        int expected = get_expected_label(elt.ground_truth);
+
+        if (found == expected) {
+            ++count_valid;
+        }
+        cost_sum += std::accumulate(costs.mem, costs.mem + costs.size, 0.0) /
+                    costs.size;
+    }
+    avg_cost = cost_sum / (double)db.size();
+    accuracy = 100 * ((double)count_valid / (double)db.size());
+    return {avg_cost, accuracy};
 }

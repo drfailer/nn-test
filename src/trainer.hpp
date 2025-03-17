@@ -14,16 +14,17 @@ class Trainer {
           cost_prime_(cost_prime) {}
 
   public:
-    Vector compute_z(Layer const &layer, Vector const &a);
+    Vector compute_z(Layer const &layer, Vector const &a) const;
 
-    Vector act(Vector const &z);
-    Vector act_prime(Vector const &z);
-    Vector cost(Vector const &ground_truth, Vector const &y);
-    Vector cost_prime(Vector const &ground_truth, Vector const &y);
+    Vector act(Vector const &z) const;
+    Vector act_prime(Vector const &z) const;
+    Vector cost(Vector const &ground_truth, Vector const &y) const;
+    Vector cost_prime(Vector const &ground_truth, Vector const &y) const;
 
-    std::pair<Vectors, Vectors> feedforward(Vector const &input);
+    std::pair<Vectors, Vectors> feedforward(Vector const &input) const;
     std::pair<GradW, GradB> backpropagate(Vector const &ground_truth,
-                                          Vectors const &as, Vectors const &zs);
+                                          Vectors const &as,
+                                          Vectors const &zs) const;
 
     void update_minibatch(MinibatchGenerator const &minibatch,
                           double learning_rate);
@@ -31,7 +32,22 @@ class Trainer {
                   double learning_rate);
     void train(DataBase const &db, size_t minibatch_size, size_t nb_epochs,
                double learning_rate, uint32_t seed = 0);
-    double evaluate(DataBase const &test_db);
+    /*
+     * Train the model and dump the accuracy and the cost for the train and test
+     * datasets at each epoch in the given file. The format is the following:
+     * - nb_epochs minibatch_size learning_rate
+     * - train costs
+     * - train accuracy
+     * - test costs
+     * - test accuracy
+     */
+    void train_dump(std::string const &filename, DataBase const &train_db,
+                    DataBase const &test_db, size_t minibatch_size,
+                    size_t nb_epochs, double learning_rate, uint32_t seed = 0);
+
+    double evaluate_cost(DataBase const &test_db) const;
+    double evaluate_accuracy(DataBase const &test_db) const;
+    std::pair<double, double> evaluate(DataBase const &test_db) const;
 
   private:
     Model *model_ = nullptr;
@@ -39,6 +55,9 @@ class Trainer {
     std::function<double(double)> act_prime_;
     std::function<double(double, double)> cost_;
     std::function<double(double, double)> cost_prime_;
+
+  private:
+    int get_expected_label(Vector const &v) const;
 };
 
 #endif
