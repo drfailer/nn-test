@@ -7,11 +7,16 @@
 #include <cblas.h>
 #include <functional>
 
+struct Tracer;
+
 class Trainer {
   public:
-    Trainer(Model *model, auto act, auto act_prime, auto cost, auto cost_prime)
+    Trainer(Model *model, auto act, auto act_prime, auto cost, auto cost_prime,
+            Tracer *tracer)
         : model_(model), act_(act), act_prime_(act_prime), cost_(cost),
-          cost_prime_(cost_prime) {}
+          cost_prime_(cost_prime), tracer_(tracer) {}
+    Trainer(Model *model, auto act, auto act_prime, auto cost, auto cost_prime)
+        : Trainer(model, act, act_prime, cost, cost_prime, nullptr) {}
 
   public:
     Vector compute_z(Layer const &layer, Vector const &a) const;
@@ -28,22 +33,15 @@ class Trainer {
 
     void update_minibatch(MinibatchGenerator const &minibatch,
                           double learning_rate);
+    void update(DataSet const &ds, double learning_rate);
+
     void optimize(GradW const &grads_w, GradB const &grads_b,
                   double learning_rate);
-    void train(DataSet const &ds, size_t minibatch_size, size_t nb_epochs,
-               double learning_rate, uint32_t seed = 0);
-    /*
-     * Train the model and dump the accuracy and the cost for the train and test
-     * datasets at each epoch in the given file. The format is the following:
-     * - nb_epochs minibatch_size learning_rate
-     * - train costs
-     * - train accuracy
-     * - test costs
-     * - test accuracy
-     */
-    void train_dump(std::string const &filename, DataSet const &train_ds,
-                    DataSet const &test_ds, size_t minibatch_size,
-                    size_t nb_epochs, double learning_rate, uint32_t seed = 0);
+
+    void train(DataSet const &ds, size_t nb_epochs, double learning_rate);
+    void train_minibatch(DataSet const &ds, size_t minibatch_size,
+                         size_t nb_epochs, double learning_rate,
+                         uint32_t seed = 0);
 
     double evaluate_cost(DataSet const &test_ds) const;
     double evaluate_accuracy(DataSet const &test_ds) const;
@@ -55,6 +53,10 @@ class Trainer {
     std::function<double(double)> act_prime_;
     std::function<double(double, double)> cost_;
     std::function<double(double, double)> cost_prime_;
+    Tracer *tracer_ = nullptr;
+
+  public:
+    void tracer(Tracer *tracer) { tracer_ = tracer; }
 
   private:
     int get_expected_label(Vector const &v) const;

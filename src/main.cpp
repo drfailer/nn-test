@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <random>
+#include "tracer.hpp"
 
 DataSet OR_train = {
     {{0, 0}, {0}},
@@ -92,7 +93,7 @@ void train_eval(Trainer t, DataSet const &ds, size_t nb_epochs,
                   << "; expected: " << elt.ground_truth[0] << std::endl;
     }
 
-    t.train(ds, 4, nb_epochs, l_rate);
+    t.train_minibatch(ds, 4, nb_epochs, l_rate);
 
     std::cout << "after train:" << std::endl;
     for (auto const &elt : ds) {
@@ -129,7 +130,7 @@ void mnist_train_and_eval(Trainer t, DataSet const &train_ds,
                           double l_rate, size_t minibatch_size) {
     std::mt19937 gen(0);
 
-    t.train(train_ds, minibatch_size, nb_epochs, l_rate);
+    t.train_minibatch(train_ds, minibatch_size, nb_epochs, l_rate);
 
     for (size_t i = 0; i < 10; ++i) {
         auto [as, zs] = t.feedforward(test_ds[i].input);
@@ -158,6 +159,7 @@ int main(void) {
     DataSet mnist_test_ds =
         loader.load_ds("../data/mnist/t10k-labels-idx1-ubyte",
                        "../data/mnist/t10k-images-idx3-ubyte");
+    Tracer tracer(mnist_train_ds, mnist_test_ds);
 
     m.input(28 * 28);
     m.add_layer(10);
@@ -166,11 +168,12 @@ int main(void) {
 
     // this learns fast without the AVERAGE_MINIBATCH
     /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 30, 0.01, 60'000); */
-    mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 30 * 60'000, 0.01, 1);
+    /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 30 * 60'000, 0.01, 1); */
 
-    /* t.train_dump("train_8_1_1000000.out", mnist_train_ds, mnist_test_ds, 8, 1'000, 1); */
-    /* t.train_dump("train_8_01_1000000.out", mnist_train_ds, mnist_test_ds, 8, 1'000, 0.1); */
-    /* t.train_dump("train_60000_001_30.out", mnist_train_ds, mnist_test_ds, 60'000, 30, 0.01); */
+    t.tracer(&tracer);
+    /* t.train_minibatch(mnist_train_ds, 8, 1'000, 1); */
+    t.train_minibatch(mnist_train_ds, 8, 1'000, 0.1);
+    /* t.train(mnist_train_ds, 30, 0.01); */
 
     /* t.train(mnist_train_ds, 8, 100, 0.002, r()); */
     /* std::cout << "evaluation (train): " << mnist_eval(t, mnist_train_ds) */

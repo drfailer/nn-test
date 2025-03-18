@@ -6,11 +6,7 @@
 #include <iostream>
 #include <numeric>
 #include <algorithm>
-#define AVERAGE_MINIBATCH
-
-/******************************************************************************/
-/*                           trainer implementation */
-/******************************************************************************/
+#include "tracer.hpp"
 
 Vector Trainer::act(Vector const &z) const { return map(act_, z); }
 
@@ -81,7 +77,6 @@ void Trainer::optimize(GradW const &grads_w, GradB const &grads_b,
     }
 }
 
-#ifdef AVERAGE_MINIBATCH
 void Trainer::update_minibatch(MinibatchGenerator const &minibatch,
                                double learning_rate) {
     auto const &[x, gt] = minibatch.get(0);
@@ -98,76 +93,49 @@ void Trainer::update_minibatch(MinibatchGenerator const &minibatch,
     optimize(total_grad_w, total_grad_b,
              learning_rate / (double)minibatch.size());
 }
-#else
-void Trainer::update_minibatch(MinibatchGenerator const &minibatch,
-                               double learning_rate) {
-    for (size_t i = 0; i < minibatch.size(); ++i) {
-        auto const &[x, gt] = minibatch.get(i);
+
+void Trainer::update(DataSet const &ds, double learning_rate) {
+    for (size_t i = 0; i < ds.size(); ++i) {
+        auto const &[x, gt] = ds[i];
         auto [as, zs] = feedforward(x);
         auto [grads_w, grads_b] = backpropagate(gt, as, zs);
         optimize(grads_w, grads_b, learning_rate);
     }
 }
-#endif
 
-void Trainer::train(DataSet const &ds, size_t minibatch_size, size_t nb_epochs,
+void Trainer::train(DataSet const &ds, size_t nb_epochs, double learning_rate) {
+    if (tracer_) {
+        tracer_->init(nb_epochs, ds.size(), learning_rate);
+    }
+    for (size_t epoch = 0; epoch < nb_epochs; ++epoch) {
+        update(ds, learning_rate);
+        if (tracer_) {
+            tracer_->trace(this, epoch);
+        }
+    }
+    if (tracer_) {
+        tracer_->dump();
+    }
+}
+
+void Trainer::train_minibatch(DataSet const &ds, size_t minibatch_size, size_t nb_epochs,
                     double learning_rate, uint32_t seed) {
     assert(ds.size() >= minibatch_size);
     MinibatchGenerator minibatch(ds, minibatch_size, seed);
 
-    for (size_t epoch = 0; epoch < nb_epochs; ++epoch) {
-        minibatch.generate();
-        update_minibatch(minibatch, learning_rate);
+    if (tracer_) {
+        tracer_->init(nb_epochs, minibatch_size, learning_rate);
     }
-}
-
-/*
- * Train the model and dump the accuracy and the cost for the train and test
- * datasets at each epoch in the given file. The format is the following:
- * - nb_epochs minibatch_size learning_rate
- * - train costs
- * - train accuracy
- * - test costs
- * - test accuracy
- */
-void Trainer::train_dump(std::string const &filename, DataSet const &train_ds,
-                         DataSet const &test_ds, size_t minibatch_size,
-                         size_t nb_epochs, double learning_rate,
-                         uint32_t seed) {
-    assert(train_ds.size() >= minibatch_size);
-    MinibatchGenerator minibatch(train_ds, minibatch_size, seed);
-    std::ofstream fs(filename, std::ios::binary);
-    std::vector<double> costs_train(nb_epochs);
-    std::vector<double> costs_test(nb_epochs);
-    std::vector<double> accuracy_train(nb_epochs);
-    std::vector<double> accuracy_test(nb_epochs);
-    size_t loading_count = std::max<size_t>(1, nb_epochs / 100);
-
-    fs.write(reinterpret_cast<char const *>(&nb_epochs), sizeof(size_t));
-    fs.write(reinterpret_cast<char const *>(&minibatch_size), sizeof(size_t));
-    fs.write(reinterpret_cast<char const *>(&learning_rate), sizeof(double));
     for (size_t epoch = 0; epoch < nb_epochs; ++epoch) {
         minibatch.generate();
         update_minibatch(minibatch, learning_rate);
-        auto eval_train = evaluate(train_ds);
-        auto eval_test = evaluate(test_ds);
-        costs_train[epoch] = eval_train.first;
-        costs_test[epoch] = eval_test.first;
-        accuracy_train[epoch] = eval_train.second;
-        accuracy_test[epoch] = eval_test.second;
-        if (epoch % loading_count == 0) {
-            std::cout << 100 * epoch / nb_epochs << " %" << std::endl;
+        if (tracer_) {
+            tracer_->trace(this, epoch);
         }
     }
-
-    fs.write(reinterpret_cast<char const *>(costs_train.data()),
-             nb_epochs * sizeof(double));
-    fs.write(reinterpret_cast<char const *>(accuracy_train.data()),
-             nb_epochs * sizeof(double));
-    fs.write(reinterpret_cast<char const *>(costs_test.data()),
-             nb_epochs * sizeof(double));
-    fs.write(reinterpret_cast<char const *>(accuracy_test.data()),
-             nb_epochs * sizeof(double));
+    if (tracer_) {
+        tracer_->dump();
+    }
 }
 
 int Trainer::get_expected_label(Vector const &v) const {
