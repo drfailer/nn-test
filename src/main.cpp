@@ -26,26 +26,6 @@ DataSet XOR_train = {
     {{1, 1}, {0}},
 };
 
-double sigmoid(double x) { return 1.0 / (1.0 + std::exp(-x)); }
-
-double sigmoid_prime(double x) { return sigmoid(x) * (1.0 - sigmoid(x)); }
-
-double binary_step(double x) {
-    if (x < 0) {
-        return 0;
-    }
-    return 1;
-}
-
-double binary_step_prime(double) { return 0; }
-
-double quadratic_loss(double gt, double y) {
-    double diff = gt - y;
-    return 0.5 * diff * diff;
-}
-
-double quadratic_loss_prime(double gt, double y) { return y - gt; }
-
 void test_vector() {
     Vector v1 = {1, 2};
     assert(1 == v1[0]);
@@ -62,8 +42,9 @@ void test_vector() {
 
 void test_compute_z() {
     Model m;
-    Trainer t(&m, &sigmoid, &sigmoid_prime, &quadratic_loss,
-              &quadratic_loss_prime);
+    Sigmoid sigmoid;
+    QuadraticLoss quadratic_loss;
+    Trainer t(&m, &quadratic_loss, &sigmoid);
     Matrix w(2, 2);
     Vector b(2);
     Vector a(2);
@@ -130,7 +111,11 @@ void mnist_train_and_eval(Trainer t, DataSet const &train_ds,
                           double l_rate, size_t minibatch_size) {
     std::mt19937 gen(0);
 
-    t.train_minibatch(train_ds, minibatch_size, nb_epochs, l_rate);
+    if (minibatch_size == 0) {
+        t.train(train_ds, nb_epochs, l_rate);
+    } else {
+        t.train_minibatch(train_ds, minibatch_size, nb_epochs, l_rate);
+    }
 
     for (size_t i = 0; i < 10; ++i) {
         auto [as, zs] = t.feedforward(test_ds[i].input);
@@ -145,8 +130,9 @@ void mnist_train_and_eval(Trainer t, DataSet const &train_ds,
 int main(void) {
     MNISTLoader loader;
     Model m;
-    Trainer t(&m, &sigmoid, &sigmoid_prime, &quadratic_loss,
-              &quadratic_loss_prime);
+    Sigmoid sigmoid;
+    QuadraticLoss quadratic_loss;
+    Trainer t(&m, &quadratic_loss, &sigmoid);
     std::random_device r;
 
     test_compute_z();
@@ -167,12 +153,13 @@ int main(void) {
     m.init(r());
 
     // this learns fast without the AVERAGE_MINIBATCH
-    /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 30, 0.01, 60'000); */
+    /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 30, 0.01, 0); */
     /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 30 * 60'000, 0.01, 1); */
+    mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 50'000, 1, 8);
 
-    t.tracer(&tracer);
+    /* t.tracer(&tracer); */
     /* t.train_minibatch(mnist_train_ds, 8, 1'000, 1); */
-    t.train_minibatch(mnist_train_ds, 8, 1'000, 0.1);
+    /* t.train_minibatch(mnist_train_ds, 8, 1'000, 0.1); */
     /* t.train(mnist_train_ds, 30, 0.01); */
 
     /* t.train(mnist_train_ds, 8, 100, 0.002, r()); */
@@ -183,13 +170,10 @@ int main(void) {
 
     /* for (size_t i = 0; i < 1000; ++i) { */
     /*     t.train(mnist_train_ds, 8, 100, 0.002, r()); */
-    /*     std::cout << "evaluation (train): " << mnist_eval(t, mnist_train_ds)
-     */
-    /*               << ", loss = " << t.evaluate(mnist_train_ds) << std::endl;
-     */
+    /*     std::cout << "evaluation (train): " << mnist_eval(t, mnist_train_ds) */
+    /*               << ", loss = " << t.evaluate(mnist_train_ds) << std::endl; */
     /*     std::cout << "evaluation (test): " << mnist_eval(t, mnist_test_ds) */
-    /*               << ", loss = " << t.evaluate(mnist_test_ds) << std::endl;
-     */
+    /*               << ", loss = " << t.evaluate(mnist_test_ds) << std::endl; */
     /* } */
 
     /* train_eval(t, OR_train, 100'000, 0.004); */

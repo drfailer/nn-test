@@ -1,23 +1,22 @@
 #include "trainer.hpp"
 #include "cblas.h"
+#include "tracer.hpp"
 #include "types.hpp"
 #include <cstring>
-#include <fstream>
-#include <iostream>
 #include <numeric>
-#include <algorithm>
-#include "tracer.hpp"
 
-Vector Trainer::act(Vector const &z) const { return map(act_, z); }
+Vector Trainer::act(Vector const &z) const { return map(activation_, z); }
 
-Vector Trainer::act_prime(Vector const &z) const { return map(act_prime_, z); }
+Vector Trainer::act_prime(Vector const &z) const {
+    return map_derivative(activation_, z);
+}
 
 Vector Trainer::cost(Vector const &ground_truth, Vector const &y) const {
     return map(cost_, ground_truth, y);
 }
 
 Vector Trainer::cost_prime(Vector const &ground_truth, Vector const &y) const {
-    return map(cost_prime_, ground_truth, y);
+    return map_derivative(cost_, ground_truth, y);
 }
 
 Vector Trainer::compute_z(Layer const &layer, Vector const &a) const {
@@ -118,8 +117,9 @@ void Trainer::train(DataSet const &ds, size_t nb_epochs, double learning_rate) {
     }
 }
 
-void Trainer::train_minibatch(DataSet const &ds, size_t minibatch_size, size_t nb_epochs,
-                    double learning_rate, uint32_t seed) {
+void Trainer::train_minibatch(DataSet const &ds, size_t minibatch_size,
+                              size_t nb_epochs, double learning_rate,
+                              uint32_t seed) {
     assert(ds.size() >= minibatch_size);
     MinibatchGenerator minibatch(ds, minibatch_size, seed);
 

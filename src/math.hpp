@@ -119,9 +119,6 @@ using GradB = std::vector<Vector>;
 /*                                 functions                                  */
 /******************************************************************************/
 
-Vector map(std::function<double(double)> fun, Vector const &v);
-Vector map(std::function<double(double, double)> fun, Vector const &v1,
-           Vector const &v2);
 Vector matmul(T<Matrix> const &weightsT, Vector &err);
 Matrix matmul(Vector const &err, T<Vector> const &aT);
 Vector hadamard(Vector &&a, Vector const &b);

@@ -1,22 +1,19 @@
 #ifndef TRAINER_H
 #define TRAINER_H
+#include "functions.hpp"
 #include "minibatch_generator.hpp"
 #include "model.hpp"
 #include "types.hpp"
 #include <cassert>
 #include <cblas.h>
-#include <functional>
 
 struct Tracer;
 
 class Trainer {
   public:
-    Trainer(Model *model, auto act, auto act_prime, auto cost, auto cost_prime,
-            Tracer *tracer)
-        : model_(model), act_(act), act_prime_(act_prime), cost_(cost),
-          cost_prime_(cost_prime), tracer_(tracer) {}
-    Trainer(Model *model, auto act, auto act_prime, auto cost, auto cost_prime)
-        : Trainer(model, act, act_prime, cost, cost_prime, nullptr) {}
+    Trainer(Model *model, auto cost, auto activation, Tracer *tracer = nullptr)
+        : model_(model), cost_(cost), activation_(activation), tracer_(tracer) {
+    }
 
   public:
     Vector compute_z(Layer const &layer, Vector const &a) const;
@@ -49,10 +46,9 @@ class Trainer {
 
   private:
     Model *model_ = nullptr;
-    std::function<double(double)> act_;
-    std::function<double(double)> act_prime_;
-    std::function<double(double, double)> cost_;
-    std::function<double(double, double)> cost_prime_;
+    CostFunction *cost_ = nullptr;
+    ActivationFunction *activation_ = nullptr;
+    OptimizeFunction *optimize_ = nullptr;
     Tracer *tracer_ = nullptr;
 
   public:

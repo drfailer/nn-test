@@ -7,26 +7,6 @@
 /*                                 functions                                  */
 /******************************************************************************/
 
-Vector map(std::function<double(double)> fun, Vector const &v) {
-    Vector result(v.size);
-
-    for (size_t i = 0; i < v.size; ++i) {
-        result[i] = fun(v[i]);
-    }
-    return result;
-}
-
-Vector map(std::function<double(double, double)> fun, Vector const &v1,
-                    Vector const &v2) {
-    Vector result(v1.size);
-
-    assert(v1.size == v2.size);
-    for (size_t i = 0; i < v1.size; ++i) {
-        result[i] = fun(v1[i], v2[i]);
-    }
-    return result;
-}
-
 Vector hadamard(Vector &&a, Vector const &b) {
     assert(a.size == b.size);
     for (size_t i = 0; i < a.size; ++i) {
