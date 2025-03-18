@@ -1,5 +1,5 @@
-#ifndef MATRIX_H
-#define MATRIX_H
+#ifndef MATH_H
+#define MATH_H
 #include <cstddef>
 #include <cstring>
 #include <functional>
@@ -112,6 +112,9 @@ struct T {
     explicit T(MatrixType const &matrix): matrix(matrix) {}
 };
 
+using GradW = std::vector<Matrix>;
+using GradB = std::vector<Vector>;
+
 /******************************************************************************/
 /*                                 functions                                  */
 /******************************************************************************/
@@ -146,5 +149,8 @@ LazyCMMult operator*(double constant, Matrix const &m);
 Matrix const &operator-=(Matrix &m, LazyCMMult const &cvmult);
 Matrix const &operator+=(Matrix &lhs, Matrix const &rhs);
 Matrix const &operator/=(Matrix &m, double constant);
+
+GradW const &operator+=(GradW &lhs, GradW const &rhs);
+GradB const &operator+=(GradB &lhs, GradB const &rhs);
 
 #endif

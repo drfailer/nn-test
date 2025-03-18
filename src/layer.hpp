@@ -1,7 +1,7 @@
 #ifndef LAYER_H
 #define LAYER_H
 #include <cstddef>
-#include "matrix.hpp"
+#include "math.hpp"
 
 struct Layer {
     Matrix weights;

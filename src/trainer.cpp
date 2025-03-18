@@ -9,26 +9,6 @@
 #define AVERAGE_MINIBATCH
 
 /******************************************************************************/
-/*                                  helpers                                   */
-/******************************************************************************/
-
-GradW const &operator+=(GradW &lhs, GradW const &rhs) {
-    assert(lhs.size() == rhs.size());
-    for (size_t i = 0; i < lhs.size(); ++i) {
-        lhs[i] += rhs[i];
-    }
-    return lhs;
-}
-
-GradB const &operator+=(GradB &lhs, GradB const &rhs) {
-    assert(lhs.size() == rhs.size());
-    for (size_t i = 0; i < lhs.size(); ++i) {
-        lhs[i] += rhs[i];
-    }
-    return lhs;
-}
-
-/******************************************************************************/
 /*                           trainer implementation */
 /******************************************************************************/
 

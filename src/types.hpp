@@ -1,6 +1,6 @@
 #ifndef TYPES_H
 #define TYPES_H
-#include "matrix.hpp"
+#include "math.hpp"
 #include <vector>
 
 using Vectors = std::vector<Vector>;
@@ -11,8 +11,5 @@ struct DataSetEntry {
 };
 
 using DataSet = std::vector<DataSetEntry>;
-
-using GradW = std::vector<Matrix>;
-using GradB = std::vector<Vector>;
 
 #endif

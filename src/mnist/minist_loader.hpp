@@ -1,6 +1,6 @@
 #ifndef MNIST_MINIST_LOADER_H
 #define MNIST_MINIST_LOADER_H
-#include "../matrix.hpp"
+#include "../math.hpp"
 #include "../types.hpp"
 #include <cassert>
 #include <fstream>

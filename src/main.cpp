@@ -1,4 +1,4 @@
-#include "matrix.hpp"
+#include "math.hpp"
 #include "mnist/minist_loader.hpp"
 #include "model.hpp"
 #include "trainer.hpp"
