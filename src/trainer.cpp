@@ -130,10 +130,10 @@ void Trainer::update_minibatch(MinibatchGenerator const &minibatch,
 }
 #endif
 
-void Trainer::train(DataBase const &db, size_t minibatch_size, size_t nb_epochs,
+void Trainer::train(DataSet const &ds, size_t minibatch_size, size_t nb_epochs,
                     double learning_rate, uint32_t seed) {
-    assert(db.size() >= minibatch_size);
-    MinibatchGenerator minibatch(db, minibatch_size, seed);
+    assert(ds.size() >= minibatch_size);
+    MinibatchGenerator minibatch(ds, minibatch_size, seed);
 
     for (size_t epoch = 0; epoch < nb_epochs; ++epoch) {
         minibatch.generate();
@@ -150,12 +150,12 @@ void Trainer::train(DataBase const &db, size_t minibatch_size, size_t nb_epochs,
  * - test costs
  * - test accuracy
  */
-void Trainer::train_dump(std::string const &filename, DataBase const &train_db,
-                         DataBase const &test_db, size_t minibatch_size,
+void Trainer::train_dump(std::string const &filename, DataSet const &train_ds,
+                         DataSet const &test_ds, size_t minibatch_size,
                          size_t nb_epochs, double learning_rate,
                          uint32_t seed) {
-    assert(train_db.size() >= minibatch_size);
-    MinibatchGenerator minibatch(train_db, minibatch_size, seed);
+    assert(train_ds.size() >= minibatch_size);
+    MinibatchGenerator minibatch(train_ds, minibatch_size, seed);
     std::ofstream fs(filename, std::ios::binary);
     std::vector<double> costs_train(nb_epochs);
     std::vector<double> costs_test(nb_epochs);
@@ -169,8 +169,8 @@ void Trainer::train_dump(std::string const &filename, DataBase const &train_db,
     for (size_t epoch = 0; epoch < nb_epochs; ++epoch) {
         minibatch.generate();
         update_minibatch(minibatch, learning_rate);
-        auto eval_train = evaluate(train_db);
-        auto eval_test = evaluate(test_db);
+        auto eval_train = evaluate(train_ds);
+        auto eval_test = evaluate(test_ds);
         costs_train[epoch] = eval_train.first;
         costs_test[epoch] = eval_test.first;
         accuracy_train[epoch] = eval_train.second;
@@ -201,22 +201,22 @@ int Trainer::get_expected_label(Vector const &v) const {
     return max_idx;
 }
 
-double Trainer::evaluate_cost(DataBase const &db) const {
+double Trainer::evaluate_cost(DataSet const &ds) const {
     double cost_sum = 0;
 
-    for (auto const &elt : db) {
+    for (auto const &elt : ds) {
         auto [as, zs] = feedforward(elt.input);
         auto costs = cost(elt.ground_truth, as.back());
         cost_sum += std::accumulate(costs.mem, costs.mem + costs.size, 0.0) /
                     costs.size;
     }
-    return cost_sum / db.size();
+    return cost_sum / ds.size();
 }
 
-double Trainer::evaluate_accuracy(DataBase const &db) const {
+double Trainer::evaluate_accuracy(DataSet const &ds) const {
     size_t count_valid = 0;
 
-    for (auto const &elt : db) {
+    for (auto const &elt : ds) {
         auto [as, zs] = feedforward(elt.input);
         int found = get_expected_label(as.back());
         int expected = get_expected_label(elt.ground_truth);
@@ -224,16 +224,16 @@ double Trainer::evaluate_accuracy(DataBase const &db) const {
             ++count_valid;
         }
     }
-    return 100 * ((double)count_valid / (double)db.size());
+    return 100 * ((double)count_valid / (double)ds.size());
 }
 
-std::pair<double, double> Trainer::evaluate(DataBase const &db) const {
+std::pair<double, double> Trainer::evaluate(DataSet const &ds) const {
     size_t count_valid = 0;
     double cost_sum = 0;
     double avg_cost = 0;
     double accuracy = 0;
 
-    for (auto const &elt : db) {
+    for (auto const &elt : ds) {
         auto [as, zs] = feedforward(elt.input);
         auto costs = cost(elt.ground_truth, as.back());
         int found = get_expected_label(as.back());
@@ -245,7 +245,7 @@ std::pair<double, double> Trainer::evaluate(DataBase const &db) const {
         cost_sum += std::accumulate(costs.mem, costs.mem + costs.size, 0.0) /
                     costs.size;
     }
-    avg_cost = cost_sum / (double)db.size();
-    accuracy = 100 * ((double)count_valid / (double)db.size());
+    avg_cost = cost_sum / (double)ds.size();
+    accuracy = 100 * ((double)count_valid / (double)ds.size());
     return {avg_cost, accuracy};
 }

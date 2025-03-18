@@ -87,17 +87,17 @@ class MNISTLoader {
         return result;
     }
 
-    DataBase load_db(std::string const labels_path,
+    DataSet load_ds(std::string const labels_path,
                      std::string const images_path) {
         auto labels = load_labels(labels_path);
         auto images = load_imgages(images_path);
 
-        DataBase db(images.size());
+        DataSet ds(images.size());
 
-        for (size_t i = 0; i < db.size(); ++i) {
-            db[i] = DataBaseEntry(images[i], create_output_vector(labels[i]));
+        for (size_t i = 0; i < ds.size(); ++i) {
+            ds[i] = DataSetEntry(images[i], create_output_vector(labels[i]));
         }
-        return db;
+        return ds;
     }
 
     static void print_image(Vector const &image, size_t rows, size_t cols) {

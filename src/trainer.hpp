@@ -30,7 +30,7 @@ class Trainer {
                           double learning_rate);
     void optimize(GradW const &grads_w, GradB const &grads_b,
                   double learning_rate);
-    void train(DataBase const &db, size_t minibatch_size, size_t nb_epochs,
+    void train(DataSet const &ds, size_t minibatch_size, size_t nb_epochs,
                double learning_rate, uint32_t seed = 0);
     /*
      * Train the model and dump the accuracy and the cost for the train and test
@@ -41,13 +41,13 @@ class Trainer {
      * - test costs
      * - test accuracy
      */
-    void train_dump(std::string const &filename, DataBase const &train_db,
-                    DataBase const &test_db, size_t minibatch_size,
+    void train_dump(std::string const &filename, DataSet const &train_ds,
+                    DataSet const &test_ds, size_t minibatch_size,
                     size_t nb_epochs, double learning_rate, uint32_t seed = 0);
 
-    double evaluate_cost(DataBase const &test_db) const;
-    double evaluate_accuracy(DataBase const &test_db) const;
-    std::pair<double, double> evaluate(DataBase const &test_db) const;
+    double evaluate_cost(DataSet const &test_ds) const;
+    double evaluate_accuracy(DataSet const &test_ds) const;
+    std::pair<double, double> evaluate(DataSet const &test_ds) const;
 
   private:
     Model *model_ = nullptr;
