@@ -2,6 +2,7 @@
 #define FUNCTIONS_H
 #include "math.hpp"
 #include "model.hpp"
+#include <cassert>
 #include <cmath>
 
 /******************************************************************************/
@@ -19,7 +20,8 @@ struct ActivationFunction {
 };
 
 struct OptimizeFunction {
-    virtual void execute(Model *model, GradW grads_w, GradB grads_b) = 0;
+    virtual void execute(Model *model, GradW grads_w, GradB grads_b,
+                         double learning_rate) = 0;
 };
 
 /******************************************************************************/
@@ -42,6 +44,20 @@ struct Sigmoid : ActivationFunction {
 
     double derivative(double x) override {
         return execute(x) * (1.0 - execute(x));
+    }
+};
+
+struct SGD : OptimizeFunction {
+    void execute(Model *model, GradW grads_w, GradB grads_b,
+                 double learning_rate) override {
+        for (size_t l = 0; l < model->layers.size(); ++l) {
+            assert(grads_w[l].rows == model->layers[l].nb_nodes &&
+                   grads_w[l].cols == model->layers[l].nb_inputs);
+            assert(grads_b[l].size == model->layers[l].nb_nodes);
+
+            model->layers[l].weights -= learning_rate * grads_w[l];
+            model->layers[l].biases -= learning_rate * grads_b[l];
+        }
     }
 };
 

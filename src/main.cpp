@@ -44,7 +44,8 @@ void test_compute_z() {
     Model m;
     Sigmoid sigmoid;
     QuadraticLoss quadratic_loss;
-    Trainer t(&m, &quadratic_loss, &sigmoid);
+    SGD sgd;
+    Trainer t(&m, &quadratic_loss, &sigmoid, &sgd);
     Matrix w(2, 2);
     Vector b(2);
     Vector a(2);
@@ -132,7 +133,8 @@ int main(void) {
     Model m;
     Sigmoid sigmoid;
     QuadraticLoss quadratic_loss;
-    Trainer t(&m, &quadratic_loss, &sigmoid);
+    SGD sgd;
+    Trainer t(&m, &quadratic_loss, &sigmoid, &sgd);
     std::random_device r;
 
     test_compute_z();
@@ -148,6 +150,7 @@ int main(void) {
     Tracer tracer(mnist_train_ds, mnist_test_ds);
 
     m.input(28 * 28);
+    m.add_layer(32);
     m.add_layer(10);
 
     m.init(r());

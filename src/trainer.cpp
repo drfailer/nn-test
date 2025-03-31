@@ -66,14 +66,7 @@ std::pair<GradW, GradB> Trainer::backpropagate(Vector const &ground_truth,
 // SGD -> we should have more in the future
 void Trainer::optimize(GradW const &grads_w, GradB const &grads_b,
                        double const learning_rate) {
-    for (size_t l = 0; l < model_->layers.size(); ++l) {
-        assert(grads_w[l].rows == model_->layers[l].nb_nodes &&
-               grads_w[l].cols == model_->layers[l].nb_inputs);
-        assert(grads_b[l].size == model_->layers[l].nb_nodes);
-
-        model_->layers[l].weights -= learning_rate * grads_w[l];
-        model_->layers[l].biases -= learning_rate * grads_b[l];
-    }
+    optimize_->execute(model_, grads_w, grads_b, learning_rate);
 }
 
 void Trainer::update_minibatch(MinibatchGenerator const &minibatch,
