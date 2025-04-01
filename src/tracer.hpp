@@ -7,13 +7,13 @@
 #include <sstream>
 
 struct Tracer {
-    std::vector<double> costs_train = {};
-    std::vector<double> costs_test = {};
-    std::vector<double> accuracy_train = {};
-    std::vector<double> accuracy_test = {};
+    std::vector<ftype> costs_train = {};
+    std::vector<ftype> costs_test = {};
+    std::vector<ftype> accuracy_train = {};
+    std::vector<ftype> accuracy_test = {};
     size_t nb_epochs = 0;
     size_t minibatch_size = 0;
-    double learning_rate = 0;
+    ftype learning_rate = 0;
     DataSet const &train_ds = {};
     DataSet const &test_ds = {};
     size_t loading_count = 0;
@@ -21,14 +21,14 @@ struct Tracer {
     Tracer(DataSet const &train_ds, DataSet const &test_ds)
         : train_ds(train_ds), test_ds(test_ds) {}
 
-    void init(size_t nb_epochs, size_t minibatch_size, double learning_rate) {
+    void init(size_t nb_epochs, size_t minibatch_size, ftype learning_rate) {
         this->nb_epochs = nb_epochs;
         this->minibatch_size = minibatch_size;
         this->learning_rate = learning_rate;
-        this->costs_train = std::vector<double>(nb_epochs);
-        this->costs_test = std::vector<double>(nb_epochs);
-        this->accuracy_train = std::vector<double>(nb_epochs);
-        this->accuracy_test = std::vector<double>(nb_epochs);
+        this->costs_train = std::vector<ftype>(nb_epochs);
+        this->costs_test = std::vector<ftype>(nb_epochs);
+        this->accuracy_train = std::vector<ftype>(nb_epochs);
+        this->accuracy_test = std::vector<ftype>(nb_epochs);
         this->loading_count = std::max<size_t>(1, nb_epochs / 100);
     }
 
@@ -56,15 +56,15 @@ struct Tracer {
         fs.write(reinterpret_cast<char const *>(&minibatch_size),
                  sizeof(size_t));
         fs.write(reinterpret_cast<char const *>(&learning_rate),
-                 sizeof(double));
+                 sizeof(ftype));
         fs.write(reinterpret_cast<char const *>(costs_train.data()),
-                 nb_epochs * sizeof(double));
+                 nb_epochs * sizeof(ftype));
         fs.write(reinterpret_cast<char const *>(accuracy_train.data()),
-                 nb_epochs * sizeof(double));
+                 nb_epochs * sizeof(ftype));
         fs.write(reinterpret_cast<char const *>(costs_test.data()),
-                 nb_epochs * sizeof(double));
+                 nb_epochs * sizeof(ftype));
         fs.write(reinterpret_cast<char const *>(accuracy_test.data()),
-                 nb_epochs * sizeof(double));
+                 nb_epochs * sizeof(ftype));
     }
 };
 

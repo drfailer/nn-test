@@ -68,7 +68,7 @@ void test_compute_z() {
 }
 
 void train_eval(Trainer t, DataSet const &ds, size_t nb_epochs,
-                double l_rate) {
+                ftype l_rate) {
     std::cout << "start value:" << std::endl;
     for (auto const &elt : ds) {
         auto [as, zs] = t.feedforward(elt.input);
@@ -110,7 +110,7 @@ void mnist_print_activation(Vector const &activation, Vector const &gt) {
 
 void mnist_train_and_eval(Trainer t, DataSet const &train_ds,
                           DataSet const &test_ds, size_t nb_epochs,
-                          double l_rate, size_t minibatch_size) {
+                          ftype l_rate, size_t minibatch_size) {
     std::mt19937 gen(0);
 
     auto t1 = std::chrono::system_clock::now();
@@ -140,10 +140,10 @@ int main(void) {
     Model m;
     Sigmoid sigmoid;
     QuadraticLoss quadratic_loss;
-    /* SGD sgd; */
-    /* Trainer t(&m, &quadratic_loss, &sigmoid, &sgd); */
-    Adam adam;
-    Trainer t(&m, &quadratic_loss, &sigmoid, &adam);
+    SGD sgd;
+    Trainer t(&m, &quadratic_loss, &sigmoid, &sgd);
+    /* Adam adam; */
+    /* Trainer t(&m, &quadratic_loss, &sigmoid, &adam); */
     std::random_device r;
 
     test_compute_z();
@@ -159,7 +159,7 @@ int main(void) {
     Tracer tracer(mnist_train_ds, mnist_test_ds);
 
     m.input(28 * 28);
-    m.add_layer(32);
+    /* m.add_layer(32); */
     m.add_layer(10);
 
     m.init(r());

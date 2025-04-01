@@ -30,20 +30,20 @@ class Trainer {
                                           Vectors const &zs) const;
 
     void update_minibatch(MinibatchGenerator const &minibatch,
-                          double learning_rate);
-    void update(DataSet const &ds, double learning_rate);
+                          ftype learning_rate);
+    void update(DataSet const &ds, ftype learning_rate);
 
     void optimize(GradW const &grads_w, GradB const &grads_b,
-                  double learning_rate);
+                  ftype learning_rate);
 
-    void train(DataSet const &ds, size_t nb_epochs, double learning_rate);
+    void train(DataSet const &ds, size_t nb_epochs, ftype learning_rate);
     void train_minibatch(DataSet const &ds, size_t minibatch_size,
-                         size_t nb_epochs, double learning_rate,
+                         size_t nb_epochs, ftype learning_rate,
                          uint32_t seed = 0);
 
-    double evaluate_cost(DataSet const &test_ds) const;
-    double evaluate_accuracy(DataSet const &test_ds) const;
-    std::pair<double, double> evaluate(DataSet const &test_ds) const;
+    ftype evaluate_cost(DataSet const &test_ds) const;
+    ftype evaluate_accuracy(DataSet const &test_ds) const;
+    std::pair<ftype, ftype> evaluate(DataSet const &test_ds) const;
 
   private:
     Model *model_ = nullptr;

@@ -10,18 +10,18 @@
 /******************************************************************************/
 
 struct CostFunction {
-    virtual double execute(double ground_truth, double layer_output) = 0;
-    virtual double derivative(double ground_truth, double layer_output) = 0;
+    virtual ftype execute(ftype ground_truth, ftype layer_output) = 0;
+    virtual ftype derivative(ftype ground_truth, ftype layer_output) = 0;
 };
 
 struct ActivationFunction {
-    virtual double execute(double) = 0;
-    virtual double derivative(double) = 0;
+    virtual ftype execute(ftype) = 0;
+    virtual ftype derivative(ftype) = 0;
 };
 
 struct OptimizeFunction {
     virtual void execute(Model *model, GradW const &grads_w,
-                         GradB const &grads_b, double learning_rate) = 0;
+                         GradB const &grads_b, ftype learning_rate) = 0;
 };
 
 /******************************************************************************/
@@ -29,27 +29,27 @@ struct OptimizeFunction {
 /******************************************************************************/
 
 struct QuadraticLoss : CostFunction {
-    double execute(double ground_truth, double output) override {
-        double diff = ground_truth - output;
+    ftype execute(ftype ground_truth, ftype output) override {
+        ftype diff = ground_truth - output;
         return 0.5 * diff * diff;
     }
 
-    double derivative(double ground_truth, double output) override {
+    ftype derivative(ftype ground_truth, ftype output) override {
         return output - ground_truth;
     }
 };
 
 struct Sigmoid : ActivationFunction {
-    double execute(double x) override { return 1.0 / (1.0 + std::exp(-x)); }
+    ftype execute(ftype x) override { return 1.0 / (1.0 + std::exp(-x)); }
 
-    double derivative(double x) override {
+    ftype derivative(ftype x) override {
         return execute(x) * (1.0 - execute(x));
     }
 };
 
 struct SGD : OptimizeFunction {
     void execute(Model *model, GradW const &grads_w, GradB const &grads_b,
-                 double learning_rate) override {
+                 ftype learning_rate) override {
         for (size_t l = 0; l < model->layers.size(); ++l) {
             assert(grads_w[l].rows == model->layers[l].nb_nodes &&
                    grads_w[l].cols == model->layers[l].nb_inputs);
@@ -93,9 +93,9 @@ struct Adam : OptimizeFunction {
     // v = b2 * v + (1 - b2) * grads * grads
     void compute_mv(GradW const &grads_w, GradB const &grads_b) {
         for (size_t l = 0; l < grads_w.size(); ++l) {
-            double *mw = m_w[l].mem;
-            double *vw = v_w[l].mem;
-            double *gw = grads_w[l].mem;
+            ftype *mw = m_w[l].mem;
+            ftype *vw = v_w[l].mem;
+            ftype *gw = grads_w[l].mem;
 
             for (size_t i = 0; i < grads_w[l].rows * grads_w[l].cols; ++i) {
                 mw[i] = b1 * mw[i] + (1 - b1) * gw[i];
@@ -104,9 +104,9 @@ struct Adam : OptimizeFunction {
         }
 
         for (size_t l = 0; l < grads_b.size(); ++l) {
-            double *mb = m_b[l].mem;
-            double *vb = v_b[l].mem;
-            double *gb = grads_b[l].mem;
+            ftype *mb = m_b[l].mem;
+            ftype *vb = v_b[l].mem;
+            ftype *gb = grads_b[l].mem;
 
             for (size_t i = 0; i < grads_b[l].size; ++i) {
                 mb[i] = b1 * mb[i] + (1 - b1) * gb[i];
@@ -120,13 +120,13 @@ struct Adam : OptimizeFunction {
     // w -= learning_rate * m_ / (sqrt(v_) + sigma)
     // b -= learning_rate * m_ / (sqrt(v_) + sigma)
     void update_model(Model *model, GradW const &grads_w, GradB const &grads_b,
-                      double learning_rate) {
+                      ftype learning_rate) {
         for (size_t l = 0; l < grads_w.size(); ++l) {
             Matrix w = model->layers[l].weights;
 
             for (size_t i = 0; i < w.rows * w.cols; ++i) {
-                double mm = m_w[l].mem[i] / (1 - b1_t);
-                double vv = v_w[l].mem[i] / (1 - b2_t);
+                ftype mm = m_w[l].mem[i] / (1 - b1_t);
+                ftype vv = v_w[l].mem[i] / (1 - b2_t);
                 w.mem[i] -= learning_rate * mm / (std::sqrt(vv) + sigma);
             }
         }
@@ -135,15 +135,15 @@ struct Adam : OptimizeFunction {
             Vector b = model->layers[l].biases;
 
             for (size_t i = 0; i < b.size; ++i) {
-                double mm = m_b[l].mem[i] / (1 - b1_t);
-                double vv = v_b[l].mem[i] / (1 - b2_t);
+                ftype mm = m_b[l].mem[i] / (1 - b1_t);
+                ftype vv = v_b[l].mem[i] / (1 - b2_t);
                 b.mem[i] -= learning_rate * mm / (std::sqrt(vv) + sigma);
             }
         }
     }
 
     void execute(Model *model, GradW const &grads_w, GradB const &grads_b,
-                 double learning_rate) override {
+                 ftype learning_rate) override {
         if (is_init == false) [[unlikely]] {
             init(grads_w, grads_b);
         }
@@ -154,11 +154,11 @@ struct Adam : OptimizeFunction {
     }
 
     bool is_init = false;
-    double b1 = 0.9;
-    double b2 = 0.999;
-    double b1_t = 0.9;
-    double b2_t = 0.999;
-    double sigma = 1e-8;
+    ftype b1 = 0.9;
+    ftype b2 = 0.999;
+    ftype b1_t = 0.9;
+    ftype b2_t = 0.999;
+    ftype sigma = 1e-8;
     std::vector<Matrix> m_w;
     std::vector<Vector> m_b;
     std::vector<Matrix> v_w;

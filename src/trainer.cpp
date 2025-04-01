@@ -26,9 +26,8 @@ Vector Trainer::compute_z(Layer const &layer, Vector const &a) const {
     Vector z = layer.biases.clone();
 
     // z = weights*a + biases
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, layer.nb_nodes, layer.nb_inputs,
-                1.0, layer.weights.mem, layer.nb_inputs, a.mem, 1, 1.0, z.mem,
-                1);
+    gemv<ftype>(CblasNoTrans, layer.nb_nodes, layer.nb_inputs, 1.0,
+                layer.weights.mem, layer.nb_inputs, a.mem, 1, 1.0, z.mem, 1);
     return z;
 }
 
@@ -67,12 +66,12 @@ std::pair<GradW, GradB> Trainer::backpropagate(Vector const &ground_truth,
 
 // SGD -> we should have more in the future
 void Trainer::optimize(GradW const &grads_w, GradB const &grads_b,
-                       double const learning_rate) {
+                       ftype const learning_rate) {
     optimize_->execute(model_, grads_w, grads_b, learning_rate);
 }
 
 void Trainer::update_minibatch(MinibatchGenerator const &minibatch,
-                               double learning_rate) {
+                               ftype learning_rate) {
     auto const &[x, gt] = minibatch.get(0);
     auto [as, zs] = feedforward(x);
     auto [total_grad_w, total_grad_b] = backpropagate(gt, as, zs);
@@ -85,10 +84,10 @@ void Trainer::update_minibatch(MinibatchGenerator const &minibatch,
         total_grad_b += grads_b;
     }
     optimize(total_grad_w, total_grad_b,
-             learning_rate / (double)minibatch.size());
+             learning_rate / (ftype)minibatch.size());
 }
 
-void Trainer::update(DataSet const &ds, double learning_rate) {
+void Trainer::update(DataSet const &ds, ftype learning_rate) {
     for (size_t i = 0; i < ds.size(); ++i) {
         auto const &[x, gt] = ds[i];
         auto [as, zs] = feedforward(x);
@@ -97,7 +96,7 @@ void Trainer::update(DataSet const &ds, double learning_rate) {
     }
 }
 
-void Trainer::train(DataSet const &ds, size_t nb_epochs, double learning_rate) {
+void Trainer::train(DataSet const &ds, size_t nb_epochs, ftype learning_rate) {
     if (tracer_) {
         tracer_->init(nb_epochs, ds.size(), learning_rate);
     }
@@ -113,7 +112,7 @@ void Trainer::train(DataSet const &ds, size_t nb_epochs, double learning_rate) {
 }
 
 void Trainer::train_minibatch(DataSet const &ds, size_t minibatch_size,
-                              size_t nb_epochs, double learning_rate,
+                              size_t nb_epochs, ftype learning_rate,
                               uint32_t seed) {
     assert(ds.size() >= minibatch_size);
     MinibatchGenerator minibatch(ds, minibatch_size, seed);
@@ -144,8 +143,8 @@ int Trainer::get_expected_label(Vector const &v) const {
     return max_idx;
 }
 
-double Trainer::evaluate_cost(DataSet const &ds) const {
-    double cost_sum = 0;
+ftype Trainer::evaluate_cost(DataSet const &ds) const {
+    ftype cost_sum = 0;
 
     for (auto const &elt : ds) {
         auto [as, zs] = feedforward(elt.input);
@@ -156,7 +155,7 @@ double Trainer::evaluate_cost(DataSet const &ds) const {
     return cost_sum / ds.size();
 }
 
-double Trainer::evaluate_accuracy(DataSet const &ds) const {
+ftype Trainer::evaluate_accuracy(DataSet const &ds) const {
     size_t count_valid = 0;
 
     for (auto const &elt : ds) {
@@ -167,14 +166,14 @@ double Trainer::evaluate_accuracy(DataSet const &ds) const {
             ++count_valid;
         }
     }
-    return 100 * ((double)count_valid / (double)ds.size());
+    return 100 * ((ftype)count_valid / (ftype)ds.size());
 }
 
-std::pair<double, double> Trainer::evaluate(DataSet const &ds) const {
+std::pair<ftype, ftype> Trainer::evaluate(DataSet const &ds) const {
     size_t count_valid = 0;
-    double cost_sum = 0;
-    double avg_cost = 0;
-    double accuracy = 0;
+    ftype cost_sum = 0;
+    ftype avg_cost = 0;
+    ftype accuracy = 0;
 
     for (auto const &elt : ds) {
         auto [as, zs] = feedforward(elt.input);
@@ -188,7 +187,7 @@ std::pair<double, double> Trainer::evaluate(DataSet const &ds) const {
         cost_sum += std::accumulate(costs.mem, costs.mem + costs.size, 0.0) /
                     costs.size;
     }
-    avg_cost = cost_sum / (double)ds.size();
-    accuracy = 100 * ((double)count_valid / (double)ds.size());
+    avg_cost = cost_sum / (ftype)ds.size();
+    accuracy = 100 * ((ftype)count_valid / (ftype)ds.size());
     return {avg_cost, accuracy};
 }

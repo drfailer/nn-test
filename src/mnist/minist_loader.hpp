@@ -72,7 +72,7 @@ class MNISTLoader {
                 unsigned char px_value;
                 fs.get(reinterpret_cast<byte&>(px_value));
                 assert(0 <= px_value && px_value <= 255);
-                image[px] = (double) px_value / 255.;
+                image[px] = (ftype) px_value / 255.;
             }
             images[i] = std::move(image);
         }
