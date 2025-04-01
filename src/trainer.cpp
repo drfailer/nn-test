@@ -21,6 +21,8 @@ Vector Trainer::cost_prime(Vector const &ground_truth, Vector const &y) const {
 
 Vector Trainer::compute_z(Layer const &layer, Vector const &a) const {
     assert(a.size == layer.nb_inputs);
+    assert(layer.weights.rows == layer.nb_nodes);
+    assert(layer.weights.cols == layer.nb_inputs);
     Vector z = layer.biases.clone();
 
     // z = weights*a + biases

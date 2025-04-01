@@ -2,6 +2,7 @@
 #include "mnist/minist_loader.hpp"
 #include "model.hpp"
 #include "trainer.hpp"
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <random>
@@ -112,11 +113,17 @@ void mnist_train_and_eval(Trainer t, DataSet const &train_ds,
                           double l_rate, size_t minibatch_size) {
     std::mt19937 gen(0);
 
+    auto t1 = std::chrono::system_clock::now();
     if (minibatch_size == 0) {
         t.train(train_ds, nb_epochs, l_rate);
     } else {
         t.train_minibatch(train_ds, minibatch_size, nb_epochs, l_rate);
     }
+    auto t2 = std::chrono::system_clock::now();
+    std::cout << "training time : "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1)
+                     .count()
+              << std::endl;
 
     for (size_t i = 0; i < 10; ++i) {
         auto [as, zs] = t.feedforward(test_ds[i].input);
@@ -133,8 +140,10 @@ int main(void) {
     Model m;
     Sigmoid sigmoid;
     QuadraticLoss quadratic_loss;
-    SGD sgd;
-    Trainer t(&m, &quadratic_loss, &sigmoid, &sgd);
+    /* SGD sgd; */
+    /* Trainer t(&m, &quadratic_loss, &sigmoid, &sgd); */
+    Adam adam;
+    Trainer t(&m, &quadratic_loss, &sigmoid, &adam);
     std::random_device r;
 
     test_compute_z();
@@ -156,9 +165,10 @@ int main(void) {
     m.init(r());
 
     // this learns fast without the AVERAGE_MINIBATCH
+    mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 1, 0.01, 0);
     /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 30, 0.01, 0); */
     /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 30 * 60'000, 0.01, 1); */
-    mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 50'000, 1, 8);
+    /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 50'000, 1, 8); */
 
     /* t.tracer(&tracer); */
     /* t.train_minibatch(mnist_train_ds, 8, 1'000, 1); */
