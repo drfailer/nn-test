@@ -8,6 +8,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # add_compile_options(-Wall -Wextra -Wuninitialized -fsanitize=address -fno-omit-frame-pointer -pedantic -g)
+# add_link_options(-fsanitize=address)
 add_compile_options(-Wall -Wextra -Wuninitialized -pedantic -g -O3)
 
 add_executable(test-nn src/main.cpp src/layer.cpp src/model.cpp src/trainer.cpp
