@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import struct
 import argparse
 
+
 class Parser:
     def __init__(self):
         self.nb_epochs = 0
@@ -18,13 +19,13 @@ class Parser:
         with open(filename, "rb") as file:
             content = file.read()
             self.nb_epochs, self.minibatch_size, self.learning_rate =\
-                    struct.unpack("<QQd", content[:3*8])
+                struct.unpack("<QQf", content[:8 + 8 + 4])
 
             print(self.nb_epochs)
             print(self.minibatch_size)
             print(self.learning_rate)
-            print(len(content[8*3:]))
-            it = struct.iter_unpack("<d", content[8*3:])
+            print(len(content[8 + 8 + 4:]))
+            it = struct.iter_unpack("<f", content[8 + 8 + 4:])
 
             self.costs_train = [next(it) for _ in range(self.nb_epochs)]
             self.accuracy_train = [next(it) for _ in range(self.nb_epochs)]
@@ -43,27 +44,57 @@ def plot(filename):
     ax[0, 0].plot(parser.costs_test, label="test")
     ax[0, 0].set_xlabel("epochs")
     ax[0, 0].set_ylabel("cost")
+    ax[0, 0].legend()
 
     ax[1, 0].set_title("Evolution of the accuracy per epochs")
     ax[1, 0].plot(parser.accuracy_train, label="train")
     ax[1, 0].plot(parser.accuracy_test, label="test")
     ax[1, 0].set_xlabel("epochs")
     ax[1, 0].set_ylabel("accuracy (%)")
+    ax[1, 0].legend()
 
     fig.suptitle(f"epochs = {parser.nb_epochs}, minibatch_size = {parser.minibatch_size}, learning_rate = {parser.learning_rate}")
-    plt.legend()
+    plt.show()
+
+
+def plot_adam_sgd(files):
+    fig, ax = plt.subplots(2, 1, squeeze=False)
+
+    ax[0, 0].set_title("Evolution of the cost per epochs")
+    ax[0, 0].set_xlabel("epochs")
+    ax[0, 0].set_ylabel("cost")
+    ax[0, 0].legend()
+
+    ax[1, 0].set_title("Evolution of the accuracy per epochs")
+    ax[1, 0].set_xlabel("epochs")
+    ax[1, 0].set_ylabel("accuracy (%)")
+    ax[1, 0].legend()
+
+    for file in files:
+        parser = Parser()
+        elements = file.split(':')
+        parser.parse_file(elements[0])
+        label = elements[-1]
+
+        ax[0, 0].plot(parser.costs_test, label=label)
+        ax[1, 0].plot(parser.accuracy_test, label=label)
+        fig.suptitle(f"epochs = {parser.nb_epochs}, minibatch_size = {parser.minibatch_size}, learning_rate = {parser.learning_rate}")
+
     plt.show()
 
 
 def parse_args():
     parser = argparse.ArgumentParser("plot")
-    parser.add_argument("filename")
+    parser.add_argument("files", nargs="+")
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    plot(args.filename)
+    if len(args.files) > 1:
+        plot_adam_sgd(args.files)
+    else:
+        plot(args.files[0])
 
 
 if __name__ == "__main__":
