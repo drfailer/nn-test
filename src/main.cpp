@@ -1,12 +1,12 @@
 #include "math.hpp"
 #include "mnist/minist_loader.hpp"
 #include "model.hpp"
+#include "tracer.hpp"
 #include "trainer.hpp"
 #include <chrono>
 #include <cmath>
 #include <iostream>
 #include <random>
-#include "tracer.hpp"
 
 DataSet OR_train = {
     {{0, 0}, {0}},
@@ -26,6 +26,39 @@ DataSet XOR_train = {
     {{1, 0}, {1}},
     {{1, 1}, {0}},
 };
+
+template <typename Cost, typename Act, typename Opt>
+void train_eval(DataSet const &ds, size_t nb_epochs, ftype l_rate) {
+    Model m;
+    Cost quadratic_loss;
+    Act sigmoid;
+    Opt sgd;
+    Trainer t(&m, &quadratic_loss, &sigmoid, &sgd);
+
+    std::cout << "start value:" << std::endl;
+    for (auto const &elt : ds) {
+        auto [as, zs] = t.feedforward(elt.input);
+        std::cout << "found: " << as.back()[0]
+                  << "; expected: " << elt.ground_truth[0] << std::endl;
+    }
+
+    t.train_minibatch(ds, 4, nb_epochs, l_rate);
+
+    std::cout << "after train:" << std::endl;
+    for (auto const &elt : ds) {
+        auto [as, zs] = t.feedforward(elt.input);
+        std::cout << "found: " << as.back()[0]
+                  << "; expected: " << elt.ground_truth[0] << std::endl;
+    }
+
+    std::cout << "evaluation: " << t.evaluate_cost(ds) << std::endl;
+}
+
+void train_logic_gate() {
+    train_eval<QuadraticLoss, Sigmoid, SGD>(OR_train, 100'000, 0.004);
+    train_eval<QuadraticLoss, Sigmoid, SGD>(AND_train, 100'000, 0.004);
+    train_eval<QuadraticLoss, Sigmoid, SGD>(XOR_train, 100'000, 0.004);
+}
 
 void test_vector() {
     Vector v1 = {1, 2};
@@ -65,27 +98,6 @@ void test_compute_z() {
     Vector z = t.compute_z(Layer{w, b, 2, 2}, a);
     assert(211 == z[0]);
     assert(432 == z[1]);
-}
-
-void train_eval(Trainer t, DataSet const &ds, size_t nb_epochs,
-                ftype l_rate) {
-    std::cout << "start value:" << std::endl;
-    for (auto const &elt : ds) {
-        auto [as, zs] = t.feedforward(elt.input);
-        std::cout << "found: " << as.back()[0]
-                  << "; expected: " << elt.ground_truth[0] << std::endl;
-    }
-
-    t.train_minibatch(ds, 4, nb_epochs, l_rate);
-
-    std::cout << "after train:" << std::endl;
-    for (auto const &elt : ds) {
-        auto [as, zs] = t.feedforward(elt.input);
-        std::cout << "found: " << as.back()[0]
-                  << "; expected: " << elt.ground_truth[0] << std::endl;
-    }
-
-    std::cout << "evaluation: " << t.evaluate_cost(ds) << std::endl;
 }
 
 int get_label(Vector const &v) {
@@ -135,60 +147,68 @@ void mnist_train_and_eval(Trainer t, DataSet const &train_ds,
     std::cout << "evaluation: " << eval.second << "%" << std::endl;
 }
 
-int main(void) {
-    MNISTLoader loader;
+Model create_mnist_model() {
     Model m;
-    Sigmoid sigmoid;
-    QuadraticLoss quadratic_loss;
-    SGD sgd;
-    Trainer t(&m, &quadratic_loss, &sigmoid, &sgd);
-    /* Adam adam; */
-    /* Trainer t(&m, &quadratic_loss, &sigmoid, &adam); */
-    std::random_device r;
-
-    test_compute_z();
-    test_vector();
-    /* return 0; */
-
-    DataSet mnist_train_ds =
-        loader.load_ds("../data/mnist/train-labels-idx1-ubyte",
-                       "../data/mnist/train-images-idx3-ubyte");
-    DataSet mnist_test_ds =
-        loader.load_ds("../data/mnist/t10k-labels-idx1-ubyte",
-                       "../data/mnist/t10k-images-idx3-ubyte");
-    Tracer tracer(mnist_train_ds, mnist_test_ds);
-
     m.input(28 * 28);
     m.add_layer(32);
     m.add_layer(10);
-
     m.init(0);
+    return m;
+}
 
-    /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 2, 0.01, 0); */
-    /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 30, 0.01, 0); */
-    mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 100'000, 0.01, 8);
+template <typename Cost, typename Act, typename Opt>
+void test_mnist(DataSet const &train_data, DataSet const &test_data,
+                size_t nb_epochs, ftype learning_rate,
+                size_t minibatch_size = 0) {
+    Model m = create_mnist_model();
+    Cost cost;
+    Act act;
+    Opt opt;
+    Trainer t(&m, &cost, &act, &opt);
+    Tracer tracer(train_data, test_data);
 
-    /* t.tracer(&tracer); */
-    /* t.train_minibatch(mnist_train_ds, 8, 1'000, 1); */
-    /* t.train_minibatch(mnist_train_ds, 8, 1'000, 0.1); */
-    /* t.train(mnist_train_ds, 30, 0.01); */
+    mnist_train_and_eval(t, train_data, test_data, nb_epochs, learning_rate,
+                         minibatch_size);
+}
 
-    /* t.train(mnist_train_ds, 8, 100, 0.002, r()); */
-    /* std::cout << "evaluation (train): " << mnist_eval(t, mnist_train_ds) */
-    /*           << std::endl; */
-    /* std::cout << "evaluation (test): " << mnist_eval(t, mnist_test_ds) */
-    /*           << std::endl; */
+template <typename Cost, typename Act, typename Opt>
+void trace_mnist(DataSet const &train_data, DataSet const &test_data,
+                 size_t nb_epochs, ftype learning_rate,
+                 size_t minibatch_size = 0) {
+    Model m = create_mnist_model();
+    Cost cost;
+    Act act;
+    Opt opt;
+    Trainer t(&m, &cost, &act, &opt);
+    Tracer tracer(train_data, test_data);
 
-    /* for (size_t i = 0; i < 1000; ++i) { */
-    /*     t.train(mnist_train_ds, 8, 100, 0.002, r()); */
-    /*     std::cout << "evaluation (train): " << mnist_eval(t, mnist_train_ds) */
-    /*               << ", loss = " << t.evaluate(mnist_train_ds) << std::endl; */
-    /*     std::cout << "evaluation (test): " << mnist_eval(t, mnist_test_ds) */
-    /*               << ", loss = " << t.evaluate(mnist_test_ds) << std::endl; */
-    /* } */
+    t.tracer(&tracer);
+    if (minibatch_size == 0) {
+        t.train(train_data, nb_epochs, learning_rate);
+    } else {
+        t.train_minibatch(train_data, minibatch_size, nb_epochs, learning_rate);
+    }
+}
 
-    /* train_eval(t, OR_train, 100'000, 0.004); */
-    /* train_eval(t, AND_train, 100'000, 0.004); */
-    /* train_eval(t, XOR_train, 100'000, 0.004); */
+int main(void) {
+    MNISTLoader loader;
+    DataSet mnist_train_data =
+        loader.load_ds("../data/mnist/train-labels-idx1-ubyte",
+                       "../data/mnist/train-images-idx3-ubyte");
+    DataSet mnist_test_data =
+        loader.load_ds("../data/mnist/t10k-labels-idx1-ubyte",
+                       "../data/mnist/t10k-images-idx3-ubyte");
+    test_compute_z();
+    test_vector();
+    trace_mnist<QuadraticLoss, Sigmoid, SGD>(mnist_train_data, mnist_test_data,
+                                             1'000, 0.01, 8);
+    trace_mnist<QuadraticLoss, Sigmoid, SGD>(mnist_train_data, mnist_test_data,
+                                             30, 0.01);
+    test_mnist<QuadraticLoss, Sigmoid, SGD>(mnist_train_data, mnist_test_data,
+                                            1, 0.01);
+    test_mnist<QuadraticLoss, Sigmoid, SGD>(mnist_train_data, mnist_test_data,
+                                            30, 0.01);
+    test_mnist<QuadraticLoss, Sigmoid, SGD>(mnist_train_data, mnist_test_data,
+                                            100'000, 8);
     return 0;
 }
