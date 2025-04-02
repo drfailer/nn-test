@@ -140,10 +140,10 @@ int main(void) {
     Model m;
     Sigmoid sigmoid;
     QuadraticLoss quadratic_loss;
-    /* SGD sgd; */
-    /* Trainer t(&m, &quadratic_loss, &sigmoid, &sgd); */
-    Adam adam;
-    Trainer t(&m, &quadratic_loss, &sigmoid, &adam);
+    SGD sgd;
+    Trainer t(&m, &quadratic_loss, &sigmoid, &sgd);
+    /* Adam adam; */
+    /* Trainer t(&m, &quadratic_loss, &sigmoid, &adam); */
     std::random_device r;
 
     test_compute_z();
@@ -159,16 +159,14 @@ int main(void) {
     Tracer tracer(mnist_train_ds, mnist_test_ds);
 
     m.input(28 * 28);
-    /* m.add_layer(32); */
+    m.add_layer(32);
     m.add_layer(10);
 
     m.init(0);
 
-    // this learns fast without the AVERAGE_MINIBATCH
-    mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 1, 0.01, 0);
+    /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 2, 0.01, 0); */
     /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 30, 0.01, 0); */
-    /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 30 * 60'000, 0.01, 1); */
-    /* mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 50'000, 1, 8); */
+    mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 100'000, 0.01, 8);
 
     /* t.tracer(&tracer); */
     /* t.train_minibatch(mnist_train_ds, 8, 1'000, 1); */
