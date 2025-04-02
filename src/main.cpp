@@ -43,10 +43,7 @@ void test_vector() {
 
 void test_compute_z() {
     Model m;
-    Sigmoid sigmoid;
-    QuadraticLoss quadratic_loss;
-    SGD sgd;
-    Trainer t(&m, &quadratic_loss, &sigmoid, &sgd);
+    Trainer<QuadraticLoss, Sigmoid, SGD> t(&m);
     Matrix w(2, 2);
     Vector b(2);
     Vector a(2);
@@ -67,7 +64,7 @@ void test_compute_z() {
     assert(432 == z[1]);
 }
 
-void train_eval(Trainer t, DataSet const &ds, size_t nb_epochs,
+void train_eval(auto t, DataSet const &ds, size_t nb_epochs,
                 ftype l_rate) {
     std::cout << "start value:" << std::endl;
     for (auto const &elt : ds) {
@@ -108,7 +105,7 @@ void mnist_print_activation(Vector const &activation, Vector const &gt) {
               << " found = " << get_label(activation) << std::endl;
 }
 
-void mnist_train_and_eval(Trainer t, DataSet const &train_ds,
+void mnist_train_and_eval(auto t, DataSet const &train_ds,
                           DataSet const &test_ds, size_t nb_epochs,
                           ftype l_rate, size_t minibatch_size) {
     std::mt19937 gen(0);
@@ -138,12 +135,8 @@ void mnist_train_and_eval(Trainer t, DataSet const &train_ds,
 int main(void) {
     MNISTLoader loader;
     Model m;
-    Sigmoid sigmoid;
-    QuadraticLoss quadratic_loss;
-    SGD sgd;
-    Trainer t(&m, &quadratic_loss, &sigmoid, &sgd);
-    /* Adam adam; */
-    /* Trainer t(&m, &quadratic_loss, &sigmoid, &adam); */
+    Trainer<QuadraticLoss, Sigmoid, SGD> t(&m);
+    /* Trainer<QuadraticLoss, Sigmoid, Adam> t(&m); */
     std::random_device r;
 
     test_compute_z();

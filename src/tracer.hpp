@@ -1,6 +1,5 @@
 #ifndef TRACER_H
 #define TRACER_H
-#include "trainer.hpp"
 #include "types.hpp"
 #include <fstream>
 #include <iostream>
@@ -32,7 +31,7 @@ struct Tracer {
         this->loading_count = std::max<size_t>(1, nb_epochs / 100);
     }
 
-    void trace(Trainer const *trainer, size_t epoch) {
+    void trace(auto const *trainer, size_t epoch) {
         auto eval_train = trainer->evaluate(train_ds);
         auto eval_test = trainer->evaluate(test_ds);
         costs_train[epoch] = eval_train.first;

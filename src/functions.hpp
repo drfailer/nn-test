@@ -9,20 +9,23 @@
 /*                                 interfaces                                 */
 /******************************************************************************/
 
-/* struct CostFunction { */
-/*     virtual ftype execute(ftype ground_truth, ftype layer_output) = 0; */
-/*     virtual ftype derivative(ftype ground_truth, ftype layer_output) = 0; */
-/* }; */
+template <typename T>
+concept CostFunction = requires (T cost, ftype gt, ftype out) {
+    cost.execute(gt, out);
+    cost.derivative(gt, out);
+};
 
-/* struct ActivationFunction { */
-/*     virtual ftype execute(ftype) = 0; */
-/*     virtual ftype derivative(ftype) = 0; */
-/* }; */
+template <typename T>
+concept ActivationFunction = requires (T act, ftype x) {
+    act.execute(x);
+    act.derivative(x);
+};
 
-/* struct OptimizeFunction { */
-/*     virtual void execute(Model *model, GradW const &grads_w, */
-/*                          GradB const &grads_b, ftype learning_rate) = 0; */
-/* }; */
+template <typename T>
+concept OptimizeFunction = requires (T opt, Model *m, GradW const &gw, GradB const &gb,
+        ftype learning_rate) {
+    opt.execute(m, gw, gb, learning_rate);
+};
 
 /******************************************************************************/
 /*                              implementations                               */
@@ -173,7 +176,7 @@ struct Adam {
 /*                                 functions                                  */
 /******************************************************************************/
 
-template <typename Activation>
+template <ActivationFunction Activation>
 Vector map(Activation const &act, Vector const &v) {
     Vector result(v.size);
 
@@ -183,7 +186,7 @@ Vector map(Activation const &act, Vector const &v) {
     return result;
 }
 
-template <typename Activation>
+template <ActivationFunction Activation>
 Vector map_derivative(Activation const &act, Vector const &v) {
     Vector result(v.size);
 
@@ -193,7 +196,7 @@ Vector map_derivative(Activation const &act, Vector const &v) {
     return result;
 }
 
-template <typename Cost>
+template <CostFunction Cost>
 Vector map(Cost const &cost, Vector const &v1, Vector const &v2) {
     Vector result(v1.size);
 
@@ -204,7 +207,7 @@ Vector map(Cost const &cost, Vector const &v1, Vector const &v2) {
     return result;
 }
 
-template <typename Cost>
+template <CostFunction Cost>
 Vector map_derivative(Cost const &cost, Vector const &v1, Vector const &v2) {
     Vector result(v1.size);
 
