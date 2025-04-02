@@ -137,11 +137,13 @@ void mnist_train_and_eval(Trainer t, DataSet const &train_ds,
                      .count()
               << std::endl;
 
+#ifdef PRINT_SAMPLE
     for (size_t i = 0; i < 10; ++i) {
         auto [as, zs] = t.feedforward(test_ds[i].input);
         MNISTLoader::print_image(test_ds[i].input, 28, 28);
         mnist_print_activation(as.back(), test_ds[i].ground_truth);
     }
+#endif
     auto eval = t.evaluate(test_ds);
     std::cout << "average cost after training: " << eval.first << std::endl;
     std::cout << "evaluation: " << eval.second << "%" << std::endl;
@@ -200,15 +202,29 @@ int main(void) {
                        "../data/mnist/t10k-images-idx3-ubyte");
     test_compute_z();
     test_vector();
+
+    // trace SGD on minibatch and online learning
     trace_mnist<QuadraticLoss, Sigmoid, SGD>(mnist_train_data, mnist_test_data,
                                              1'000, 0.01, 8);
     trace_mnist<QuadraticLoss, Sigmoid, SGD>(mnist_train_data, mnist_test_data,
                                              30, 0.01);
-    test_mnist<QuadraticLoss, Sigmoid, SGD>(mnist_train_data, mnist_test_data,
-                                            1, 0.01);
+
+    // trace Adam on minibatch and online learning
+    trace_mnist<QuadraticLoss, Sigmoid, Adam>(mnist_train_data, mnist_test_data,
+                                              1'000, 0.01, 8);
+    trace_mnist<QuadraticLoss, Sigmoid, Adam>(mnist_train_data, mnist_test_data,
+                                              30, 0.01);
+
+    // online leanring on 30 epochs
     test_mnist<QuadraticLoss, Sigmoid, SGD>(mnist_train_data, mnist_test_data,
                                             30, 0.01);
+    test_mnist<QuadraticLoss, Sigmoid, Adam>(mnist_train_data, mnist_test_data,
+                                             30, 0.01);
+
+    // minibatch leanring on 1'000 epochs
     test_mnist<QuadraticLoss, Sigmoid, SGD>(mnist_train_data, mnist_test_data,
-                                            100'000, 8);
+                                            1'000, 8);
+    test_mnist<QuadraticLoss, Sigmoid, Adam>(mnist_train_data, mnist_test_data,
+                                             1'000, 8);
     return 0;
 }
