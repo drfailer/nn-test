@@ -140,10 +140,10 @@ int main(void) {
     Model m;
     Sigmoid sigmoid;
     QuadraticLoss quadratic_loss;
-    SGD sgd;
-    Trainer t(&m, &quadratic_loss, &sigmoid, &sgd);
-    /* Adam adam; */
-    /* Trainer t(&m, &quadratic_loss, &sigmoid, &adam); */
+    /* SGD sgd; */
+    /* Trainer t(&m, &quadratic_loss, &sigmoid, &sgd); */
+    Adam adam;
+    Trainer t(&m, &quadratic_loss, &sigmoid, &adam);
     std::random_device r;
 
     test_compute_z();
@@ -162,7 +162,7 @@ int main(void) {
     /* m.add_layer(32); */
     m.add_layer(10);
 
-    m.init(r());
+    m.init(0);
 
     // this learns fast without the AVERAGE_MINIBATCH
     mnist_train_and_eval(t, mnist_train_ds, mnist_test_ds, 1, 0.01, 0);

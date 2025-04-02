@@ -95,7 +95,7 @@ struct Adam : OptimizeFunction {
         for (size_t l = 0; l < grads_w.size(); ++l) {
             ftype *mw = m_w[l].mem;
             ftype *vw = v_w[l].mem;
-            ftype *gw = grads_w[l].mem;
+            ftype const *gw = grads_w[l].mem;
 
             for (size_t i = 0; i < grads_w[l].rows * grads_w[l].cols; ++i) {
                 mw[i] = b1 * mw[i] + (1 - b1) * gw[i];
@@ -106,7 +106,7 @@ struct Adam : OptimizeFunction {
         for (size_t l = 0; l < grads_b.size(); ++l) {
             ftype *mb = m_b[l].mem;
             ftype *vb = v_b[l].mem;
-            ftype *gb = grads_b[l].mem;
+            ftype const *gb = grads_b[l].mem;
 
             for (size_t i = 0; i < grads_b[l].size; ++i) {
                 mb[i] = b1 * mb[i] + (1 - b1) * gb[i];
@@ -122,22 +122,26 @@ struct Adam : OptimizeFunction {
     void update_model(Model *model, GradW const &grads_w, GradB const &grads_b,
                       ftype learning_rate) {
         for (size_t l = 0; l < grads_w.size(); ++l) {
-            Matrix w = model->layers[l].weights;
+            ftype *w = model->layers[l].weights.mem;
+            ftype const *mw = m_w[l].mem;
+            ftype const *vw = v_w[l].mem;
 
-            for (size_t i = 0; i < w.rows * w.cols; ++i) {
-                ftype mm = m_w[l].mem[i] / (1 - b1_t);
-                ftype vv = v_w[l].mem[i] / (1 - b2_t);
-                w.mem[i] -= learning_rate * mm / (std::sqrt(vv) + sigma);
+            for (size_t i = 0; i < grads_w[l].rows * grads_w[l].cols; ++i) {
+                ftype mm = mw[i] / (1 - b1_t);
+                ftype vv = vw[i] / (1 - b2_t);
+                w[i] -= learning_rate * mm / (std::sqrt(vv) + sigma);
             }
         }
 
         for (size_t l = 0; l < grads_b.size(); ++l) {
-            Vector b = model->layers[l].biases;
+            ftype *b = model->layers[l].biases.mem;
+            ftype const *mb = m_b[l].mem;
+            ftype const *vb = v_b[l].mem;
 
-            for (size_t i = 0; i < b.size; ++i) {
-                ftype mm = m_b[l].mem[i] / (1 - b1_t);
-                ftype vv = v_b[l].mem[i] / (1 - b2_t);
-                b.mem[i] -= learning_rate * mm / (std::sqrt(vv) + sigma);
+            for (size_t i = 0; i < grads_b[l].size; ++i) {
+                ftype mm = mb[i] / (1 - b1_t);
+                ftype vv = vb[i] / (1 - b2_t);
+                b[i] -= learning_rate * mm / (std::sqrt(vv) + sigma);
             }
         }
     }
