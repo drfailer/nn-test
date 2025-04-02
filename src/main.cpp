@@ -190,6 +190,15 @@ void trace_mnist(DataSet const &train_data, DataSet const &test_data,
     } else {
         t.train_minibatch(train_data, minibatch_size, nb_epochs, learning_rate);
     }
+
+    // dump results
+    std::string cost_function_name = typeid(cost).name();
+    std::string act_function_name = typeid(act).name();
+    std::string opt_function_name = typeid(opt).name();
+    std::ostringstream ss;
+    ss << "train_" << cost_function_name << "_" << act_function_name << "_"
+       << opt_function_name;
+    tracer.dump(ss.str());
 }
 
 int main(void) {

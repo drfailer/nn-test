@@ -106,9 +106,6 @@ void Trainer::train(DataSet const &ds, size_t nb_epochs, ftype learning_rate) {
             tracer_->trace(this, epoch);
         }
     }
-    if (tracer_) {
-        tracer_->dump();
-    }
 }
 
 void Trainer::train_minibatch(DataSet const &ds, size_t minibatch_size,
@@ -126,9 +123,6 @@ void Trainer::train_minibatch(DataSet const &ds, size_t minibatch_size,
         if (tracer_) {
             tracer_->trace(this, epoch);
         }
-    }
-    if (tracer_) {
-        tracer_->dump();
     }
 }
 

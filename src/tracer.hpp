@@ -45,10 +45,10 @@ struct Tracer {
         }
     }
 
-    void dump() {
+    void dump(std::string const &trace_name) {
         std::ostringstream ss;
-        ss << "train_" << nb_epochs << "_" << learning_rate << "_" <<
-            minibatch_size << ".out";
+        ss << trace_name << "_" << nb_epochs << "_" << learning_rate << "_"
+           << minibatch_size << ".out";
 
         std::ofstream fs(ss.str());
 
