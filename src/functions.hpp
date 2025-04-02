@@ -9,47 +9,47 @@
 /*                                 interfaces                                 */
 /******************************************************************************/
 
-struct CostFunction {
-    virtual ftype execute(ftype ground_truth, ftype layer_output) = 0;
-    virtual ftype derivative(ftype ground_truth, ftype layer_output) = 0;
-};
+/* struct CostFunction { */
+/*     virtual ftype execute(ftype ground_truth, ftype layer_output) = 0; */
+/*     virtual ftype derivative(ftype ground_truth, ftype layer_output) = 0; */
+/* }; */
 
-struct ActivationFunction {
-    virtual ftype execute(ftype) = 0;
-    virtual ftype derivative(ftype) = 0;
-};
+/* struct ActivationFunction { */
+/*     virtual ftype execute(ftype) = 0; */
+/*     virtual ftype derivative(ftype) = 0; */
+/* }; */
 
-struct OptimizeFunction {
-    virtual void execute(Model *model, GradW const &grads_w,
-                         GradB const &grads_b, ftype learning_rate) = 0;
-};
+/* struct OptimizeFunction { */
+/*     virtual void execute(Model *model, GradW const &grads_w, */
+/*                          GradB const &grads_b, ftype learning_rate) = 0; */
+/* }; */
 
 /******************************************************************************/
 /*                              implementations                               */
 /******************************************************************************/
 
-struct QuadraticLoss : CostFunction {
-    ftype execute(ftype ground_truth, ftype output) override {
+struct QuadraticLoss {
+    ftype execute(ftype ground_truth, ftype output) const {
         ftype diff = ground_truth - output;
         return 0.5 * diff * diff;
     }
 
-    ftype derivative(ftype ground_truth, ftype output) override {
+    ftype derivative(ftype ground_truth, ftype output) const {
         return output - ground_truth;
     }
 };
 
-struct Sigmoid : ActivationFunction {
-    ftype execute(ftype x) override { return 1.0 / (1.0 + std::exp(-x)); }
+struct Sigmoid {
+    ftype execute(ftype x) const { return 1.0 / (1.0 + std::exp(-x)); }
 
-    ftype derivative(ftype x) override {
+    ftype derivative(ftype x) const {
         return execute(x) * (1.0 - execute(x));
     }
 };
 
-struct SGD : OptimizeFunction {
+struct SGD {
     void execute(Model *model, GradW const &grads_w, GradB const &grads_b,
-                 ftype learning_rate) override {
+                 ftype learning_rate) {
         for (size_t l = 0; l < model->layers.size(); ++l) {
             assert(grads_w[l].rows == model->layers[l].nb_nodes &&
                    grads_w[l].cols == model->layers[l].nb_inputs);
@@ -61,7 +61,7 @@ struct SGD : OptimizeFunction {
     }
 };
 
-struct Adam : OptimizeFunction {
+struct Adam {
     /* Create m and v and set the memory to 0 */
     void init(GradW const &grads_w, GradB const &grads_b) {
         m_w.resize(grads_w.size());
@@ -147,7 +147,7 @@ struct Adam : OptimizeFunction {
     }
 
     void execute(Model *model, GradW const &grads_w, GradB const &grads_b,
-                 ftype learning_rate) override {
+                 ftype learning_rate) {
         if (is_init == false) [[unlikely]] {
             init(grads_w, grads_b);
         }
@@ -173,9 +173,46 @@ struct Adam : OptimizeFunction {
 /*                                 functions                                  */
 /******************************************************************************/
 
-Vector map(ActivationFunction *act, Vector const &v);
-Vector map_derivative(ActivationFunction *act, Vector const &v);
-Vector map(CostFunction *cost, Vector const &v1, Vector const &v2);
-Vector map_derivative(CostFunction *cost, Vector const &v1, Vector const &v2);
+template <typename Activation>
+Vector map(Activation const &act, Vector const &v) {
+    Vector result(v.size);
+
+    for (size_t i = 0; i < v.size; ++i) {
+        result[i] = act.execute(v[i]);
+    }
+    return result;
+}
+
+template <typename Activation>
+Vector map_derivative(Activation const &act, Vector const &v) {
+    Vector result(v.size);
+
+    for (size_t i = 0; i < v.size; ++i) {
+        result[i] = act.derivative(v[i]);
+    }
+    return result;
+}
+
+template <typename Cost>
+Vector map(Cost const &cost, Vector const &v1, Vector const &v2) {
+    Vector result(v1.size);
+
+    assert(v1.size == v2.size);
+    for (size_t i = 0; i < v1.size; ++i) {
+        result[i] = cost.execute(v1[i], v2[i]);
+    }
+    return result;
+}
+
+template <typename Cost>
+Vector map_derivative(Cost const &cost, Vector const &v1, Vector const &v2) {
+    Vector result(v1.size);
+
+    assert(v1.size == v2.size);
+    for (size_t i = 0; i < v1.size; ++i) {
+        result[i] = cost.derivative(v1[i], v2[i]);
+    }
+    return result;
+}
 
 #endif

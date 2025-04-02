@@ -67,7 +67,7 @@ std::pair<GradW, GradB> Trainer::backpropagate(Vector const &ground_truth,
 // SGD -> we should have more in the future
 void Trainer::optimize(GradW const &grads_w, GradB const &grads_b,
                        ftype const learning_rate) {
-    optimize_->execute(model_, grads_w, grads_b, learning_rate);
+    optimize_.execute(model_, grads_w, grads_b, learning_rate);
 }
 
 void Trainer::update_minibatch(MinibatchGenerator const &minibatch,

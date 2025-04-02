@@ -140,10 +140,10 @@ int main(void) {
     Model m;
     Sigmoid sigmoid;
     QuadraticLoss quadratic_loss;
-    /* SGD sgd; */
-    /* Trainer t(&m, &quadratic_loss, &sigmoid, &sgd); */
-    Adam adam;
-    Trainer t(&m, &quadratic_loss, &sigmoid, &adam);
+    SGD sgd;
+    Trainer t(&m, &quadratic_loss, &sigmoid, &sgd);
+    /* Adam adam; */
+    /* Trainer t(&m, &quadratic_loss, &sigmoid, &adam); */
     std::random_device r;
 
     test_compute_z();

@@ -11,10 +11,8 @@ struct Tracer;
 
 class Trainer {
   public:
-    Trainer(Model *model, auto cost, auto activation, auto optimize,
-            Tracer *tracer = nullptr)
-        : model_(model), cost_(cost), activation_(activation),
-          optimize_(optimize), tracer_(tracer) {}
+    Trainer(Model *model, auto, auto, auto, Tracer *tracer = nullptr)
+        : model_(model), tracer_(tracer) {}
 
   public:
     Vector compute_z(Layer const &layer, Vector const &a) const;
@@ -47,9 +45,9 @@ class Trainer {
 
   private:
     Model *model_ = nullptr;
-    CostFunction *cost_ = nullptr;
-    ActivationFunction *activation_ = nullptr;
-    OptimizeFunction *optimize_ = nullptr;
+    QuadraticLoss cost_;
+    Sigmoid activation_;
+    SGD optimize_;
     Tracer *tracer_ = nullptr;
 
   public:
